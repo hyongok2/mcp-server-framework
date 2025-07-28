@@ -1,0 +1,29 @@
+# 빌드 산출물
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# 사용자 설정 파일
+.qodo/
+.vscode/
+.vs/
+*.user
+*.suo
+
+# Git
+.git/
+.gitignore
+
+# OS/IDE 생성 파일
+*.DS_Store
+Thumbs.db
+
+# 테스트 및 문서 제외
+DataOps.Collector.Tests/
+docs/
+
+# 로그 및 임시 파일
+*.log
+logs/
