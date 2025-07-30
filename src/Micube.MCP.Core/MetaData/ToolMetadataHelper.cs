@@ -2,7 +2,7 @@ using System;
 using Micube.MCP.Core.MetaData;
 using Micube.MCP.Core.Models;
 
-namespace Micube.MCP.Core.Utils;
+namespace Micube.MCP.Core.MetaData;
 
 public static class ToolMetadataHelper
 {

@@ -1,4 +1,3 @@
-using System;
 using Micube.MCP.SDK.Interfaces;
 
 namespace Micube.MCP.Core.Logging;
@@ -9,18 +8,51 @@ namespace Micube.MCP.Core.Logging;
 /// </summary>
 public class LogDispatcher : IMcpLogger
 {
-    public void LogDebug(string message)
+    private readonly IEnumerable<ILogWriter> _writers;
+    private readonly LogLevel _minLevel;
+
+    public LogDispatcher(IEnumerable<ILogWriter> writers, LogLevel minLevel)
     {
-        throw new NotImplementedException();
+        _writers = writers;
+        _minLevel = minLevel;
     }
 
-    public void LogError(string message, Exception? ex = null)
+    public bool IsDebugLevel()
     {
-        throw new NotImplementedException();
+        return _minLevel <= LogLevel.Debug;
+    }
+
+    public void LogDebug(string message)
+    {
+        Write(LogLevel.Debug, message);
     }
 
     public void LogInfo(string message)
     {
-        throw new NotImplementedException();
+        Write(LogLevel.Info, message);
     }
+
+    public void LogError(string message, Exception? ex = null)
+    {
+        Write(LogLevel.Error, message, ex);
+    }
+     
+    private void Write(LogLevel level, string message, Exception? ex = null)
+    {
+        if (level < _minLevel) return;
+
+        var logItem = new LogItem
+        {
+            Timestamp = DateTime.Now,
+            Level = level,
+            Message = message,
+            Exception = ex
+        };
+
+        foreach (var writer in _writers)
+        {
+            writer.Write(logItem);
+        }
+    }
+
 }
