@@ -5,7 +5,7 @@ using Micube.MCP.Core.Models;
 
 namespace Micube.MCP.Core.Services;
 
-public class ToolQueryService
+public class ToolQueryService : IToolQueryService
 {
     private readonly ToolDispatcher _dispatcher;
 

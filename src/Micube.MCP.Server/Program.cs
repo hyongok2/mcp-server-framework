@@ -1,44 +1,76 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.Extensions.Options;
+using Micube.MCP.Core.Dispatcher;
+using Micube.MCP.Core.Loader;
+using Micube.MCP.Core.Logging;
+using Micube.MCP.Core.Services;
+using Micube.MCP.SDK.Interfaces;
+using Micube.MCP.Server;
+using Micube.MCP.Server.Options;
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+
+builder.Configuration
+       .SetBasePath(AppContext.BaseDirectory)
+       .AddJsonFile("config/appsettings.json", optional: false, reloadOnChange: true)
+       .AddEnvironmentVariables();
+
+RegisterServices(builder.Services);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+app.UseRouting();
+app.MapControllers();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+
+void RegisterServices(IServiceCollection services)
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    builder.Services.Configure<LogFileOptions>(builder.Configuration.GetSection("Logging:File"));
+    builder.Services.Configure<ToolGroupOptions>(builder.Configuration.GetSection("ToolGroups"));
+    builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection("Features"));
+    builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("Logging"));
+
+    services.AddHostedService<SystemContextHostedService>();
+    services.AddControllers();
+
+    services.AddSingleton<ILogWriter>(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<LogFileOptions>>().Value;
+        return new FileLogWriter(
+            options.Directory,
+            options.FlushIntervalSeconds,
+            options.MaxFileSizeMB,
+            options.RetentionDays
+        );
+    });
+
+    services.AddSingleton<IMcpLogger>(sp =>
+    {
+        var writers = sp.GetServices<ILogWriter>();
+
+        var logOptions = sp.GetRequiredService<IOptions<LogOptions>>().Value;
+        var levelStr = logOptions.MinLevel;
+
+        var level = Enum.TryParse<Micube.MCP.Core.Logging.LogLevel>(levelStr, true, out var parsed)
+                    ? parsed
+                    : Micube.MCP.Core.Logging.LogLevel.Info;
+
+        return new LogDispatcher(writers, level);
+    });
+
+    services.AddSingleton<IToolQueryService, ToolQueryService>();
+    services.AddSingleton<IToolDispatcher>(sp =>
+    {
+        var logger = sp.GetRequiredService<IMcpLogger>();
+        var toolOptions = sp.GetRequiredService<IOptions<ToolGroupOptions>>().Value;
+
+        var loader = new ToolGroupLoader(logger);
+        var groups = loader.LoadFromDirectory(toolOptions.Directory, toolOptions.Whitelist.ToArray());
+
+        return new ToolDispatcher(groups, logger);
+    });
+    services.AddSingleton<IMcpMessageDispatcher, McpMessageDispatcher>();
 }

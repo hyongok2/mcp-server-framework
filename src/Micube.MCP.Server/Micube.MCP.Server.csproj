@@ -16,4 +16,13 @@
     <ProjectReference Include="..\Micube.MCP.SDK\Micube.MCP.SDK.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <None Include="config/**/*.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+  </ItemGroup>
 </Project>

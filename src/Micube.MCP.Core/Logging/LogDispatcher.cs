@@ -36,7 +36,7 @@ public class LogDispatcher : IMcpLogger
     {
         Write(LogLevel.Error, message, ex);
     }
-     
+
     private void Write(LogLevel level, string message, Exception? ex = null)
     {
         if (level < _minLevel) return;
@@ -55,4 +55,11 @@ public class LogDispatcher : IMcpLogger
         }
     }
 
+    public async Task ShutdownAsync()
+    {
+        foreach (var writer in _writers)
+        {
+            await writer.ShutdownAsync();
+        }
+    }
 }
