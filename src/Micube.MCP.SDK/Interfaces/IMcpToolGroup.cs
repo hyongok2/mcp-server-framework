@@ -20,5 +20,5 @@ public interface IMcpToolGroup
     Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters);
 
     /// <summary> ToolGroup 자체 Config 주입 </summary>
-    void Configure(JsonElement config);
+    void Configure(JsonElement? config);
 }

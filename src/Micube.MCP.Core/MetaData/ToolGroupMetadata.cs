@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
 
-namespace Micube.MCP.Core.Models;
+namespace Micube.MCP.Core.MetaData;
 
 public class ToolGroupMetadata
 {

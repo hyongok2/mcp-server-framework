@@ -1,10 +1,13 @@
 using System;
+using Newtonsoft.Json;
 
 namespace Micube.MCP.SDK.Models;
 
 public class ToolCallResult
 {
+    [JsonProperty("content")]
     public List<ToolContent> Content { get; set; } = new();
+    [JsonProperty("isError")]
     public bool IsError { get; set; } = false;
 
     public static ToolCallResult Success(params string[] messages)

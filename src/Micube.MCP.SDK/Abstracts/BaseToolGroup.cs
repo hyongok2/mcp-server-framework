@@ -48,13 +48,13 @@ public abstract class BaseToolGroup : IMcpToolGroup
 
         return await CastAsync(task);
     }
-    public void Configure(JsonElement config)
+    public void Configure(JsonElement? config)
     {
         RawConfig = config;
         OnConfigure(config);
     }
 
-    protected abstract void OnConfigure(JsonElement config);
+    protected abstract void OnConfigure(JsonElement? config);
 
     private static async Task<ToolCallResult> CastAsync(Task task)
     {
