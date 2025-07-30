@@ -26,8 +26,8 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
             return message.Method switch
             {
                 "initialize" => await HandleInitializeAsync(message),
-                "tool/list" => HandleToolList(message),
-                "tool/invoke" => await HandleToolInvoke(message),
+                "tools/list" => HandleToolList(message),
+                "tools/call" => await HandleToolInvoke(message),
                 _ => CreateErrorResponse(message.Id, -32601, "Method not found", message.Method)
             };
         }

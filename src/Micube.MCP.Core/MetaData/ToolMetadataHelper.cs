@@ -10,9 +10,33 @@ public static class ToolMetadataHelper
     {
         return metadata.Tools.Select(t => new McpToolInfo
         {
-            Name = $"{metadata.GroupName}.{t.Name}",
+            Name = $"{metadata.GroupName}_{t.Name}",
             Description = t.Description,
-            InputSchema = t.Parameters
-        }).ToList();
+            InputSchema = ConvertToJsonSchema(t)
+        }).ToList();    
+    }
+
+    public static object ConvertToJsonSchema(ToolDescriptor descriptor)
+    {
+        var properties = new Dictionary<string, object>();
+        var required = new List<string>();
+
+        foreach (var param in descriptor.Parameters)
+        {
+            properties[param.Name] = new
+            {
+                type = param.Type,
+                description = param.Description
+            };
+            if (param.Required)
+                required.Add(param.Name);
+        }
+
+        return new
+        {
+            type = "object",
+            properties,
+            required
+        };
     }
 }

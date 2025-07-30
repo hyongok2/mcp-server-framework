@@ -7,9 +7,9 @@ namespace Micube.MCP.Core.Services;
 
 public class ToolQueryService : IToolQueryService
 {
-    private readonly ToolDispatcher _dispatcher;
+    private readonly IToolDispatcher _dispatcher;
 
-    public ToolQueryService(ToolDispatcher dispatcher)
+    public ToolQueryService(IToolDispatcher dispatcher)
     {
         _dispatcher = dispatcher;
     }

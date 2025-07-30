@@ -22,7 +22,7 @@ public class ToolDispatcher : IToolDispatcher
 
     public async Task<ToolCallResult> InvokeAsync(string fullToolName, Dictionary<string, object> parameters)
     {
-        var parts = fullToolName.Split('.', 2);
+        var parts = fullToolName.Split('_', 2);
         if (parts.Length != 2)
             return ToolCallResult.Fail("Invalid tool name format. Expected 'GroupName.ToolName'.");
 

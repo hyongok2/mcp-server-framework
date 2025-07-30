@@ -67,8 +67,11 @@ void RegisterServices(IServiceCollection services)
         var logger = sp.GetRequiredService<IMcpLogger>();
         var toolOptions = sp.GetRequiredService<IOptions<ToolGroupOptions>>().Value;
 
+        var baseDir = AppContext.BaseDirectory;
+        var resolvedPath = Path.GetFullPath(Path.Combine(baseDir, toolOptions.Directory));
+
         var loader = new ToolGroupLoader(logger);
-        var groups = loader.LoadFromDirectory(toolOptions.Directory, toolOptions.Whitelist.ToArray());
+        var groups = loader.LoadFromDirectory(resolvedPath, toolOptions.Whitelist.ToArray());
 
         return new ToolDispatcher(groups, logger);
     });

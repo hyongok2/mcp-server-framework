@@ -5,6 +5,7 @@ using Micube.MCP.SDK.Attributes;
 using Micube.MCP.SDK.Exceptions;
 using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.SDK.Models;
+using Newtonsoft.Json;
 
 namespace Micube.MCP.SDK.Abstracts;
 
@@ -12,7 +13,7 @@ public abstract class BaseToolGroup : IMcpToolGroup
 {
     public abstract string GroupName { get; }
     protected JsonElement? RawConfig { get; private set; }
-     protected IMcpLogger Logger { get; }
+    protected IMcpLogger Logger { get; }
     private readonly Dictionary<string, MethodInfo> _toolMethodCache;
 
     protected BaseToolGroup(IMcpLogger logger)
@@ -36,7 +37,10 @@ public abstract class BaseToolGroup : IMcpToolGroup
 
     public async Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters)
     {
-        Logger.LogDebug($"Invoking tool '{toolName}' in group '{GroupName}' with parameters: {JsonSerializer.Serialize(parameters)}");
+        Logger.LogDebug($"Invoking tool '{toolName}' in group '{GroupName}' with parameters: {JsonConvert.SerializeObject(parameters, Formatting.None, new JsonSerializerSettings
+        {
+            StringEscapeHandling = StringEscapeHandling.Default
+        })}");
 
         if (!_toolMethodCache.TryGetValue(toolName, out var method))
             throw new McpToolNotFoundException($"Tool '{toolName}' not found in group '{GroupName}'.");
@@ -71,7 +75,7 @@ public abstract class BaseToolGroup : IMcpToolGroup
                 {
                     ToolCallResult toolResult => toolResult,
                     string str => ToolCallResult.Success(str),
-                    _ => ToolCallResult.Success(JsonSerializer.Serialize(result))
+                    _ => ToolCallResult.Success(JsonConvert.SerializeObject(result))
                 };
             }
 
