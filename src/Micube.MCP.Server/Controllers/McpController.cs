@@ -17,6 +17,12 @@ public class McpController : ControllerBase
     private readonly IMcpLogger _logger;
     private readonly FeatureOptions _features;
 
+    private static readonly JsonSerializerSettings _jsonLogSettings = new JsonSerializerSettings
+    {
+        StringEscapeHandling = StringEscapeHandling.Default,
+        Formatting = Formatting.None
+    };
+
     public McpController(IMcpMessageDispatcher dispatcher, IMcpLogger logger, IOptions<FeatureOptions> features)
     {
         _dispatcher = dispatcher;
@@ -32,7 +38,7 @@ public class McpController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] McpMessage message)
     {
-        _logger.LogInfo($"[HTTP] Received message: {JsonConvert.SerializeObject(message)}");
+        _logger.LogInfo($"[HTTP] Received message: {JsonConvert.SerializeObject(message, _jsonLogSettings)}");
 
         if (_features.EnableHttp == false)
         {
@@ -45,7 +51,7 @@ public class McpController : ControllerBase
 
         var result = await _dispatcher.HandleAsync(message);
 
-        _logger.LogInfo($"[HTTP] Response: {JsonConvert.SerializeObject(result)}");
+        _logger.LogInfo($"[HTTP] Response: {JsonConvert.SerializeObject(result, _jsonLogSettings)}");
 
         return Ok(result);
     }
