@@ -24,7 +24,7 @@ public class ToolDispatcher : IToolDispatcher
     {
         var parts = fullToolName.Split('_', 2);
         if (parts.Length != 2)
-            return ToolCallResult.Fail("Invalid tool name format. Expected 'GroupName.ToolName'.");
+            return ToolCallResult.Fail("Invalid tool name format. Expected 'GroupName_ToolName'.");
 
         var groupName = parts[0];
         var toolName = parts[1];

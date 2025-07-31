@@ -4,6 +4,10 @@
 
 [코딩스타일 가이드 링크](https://google.github.io/styleguide/csharp-style.html)
 
+* 현재 이 프로젝트는 기본적인 구성만 작성된 상태이고, 문서는 전혀 작성되지 않은 상황입니다.
+* 본 Readme에는 개발에 필요한 사항만 나열되었습니다.
+* 문서는 곧 정리할 예정입니다.
+
 
 ## ✅ MCP 프레임워크 프로젝트별 사전 기능에 대한 Idea 정리 
 
@@ -198,3 +202,98 @@
 
 이제 어떤 항목부터 시작할까요?
 가장 기본인 `ToolGroupLoader`부터 함께 작성해도 좋습니다.
+
+
+---
+  프레임워크라는 특성상 가장 중요한 것은:
+
+  1. MCP 표준 완벽 준수 - 다른 MCP 클라이언트들과 100% 호환성
+  2. 확장성 - Tool 개발자들이 쉽게 새로운 기능 추가 가능
+  3. 안정성 - 예외 상황에서도 안정적인 동작
+
+  현재 프로젝트는 아키텍처는 잘 설계되어 있지만, 표준 준수 측면에서 몇 가지 핵심 이슈가 있습니다:
+
+  즉시 수정 필요:
+  - 프로토콜 버전: 2024-11-05 → 2025-06-18
+  - ping 메소드 누락 (표준 필수)
+  - notifications/initialized 누락 (핸드셰이크 완성)
+
+  SDK 설계는 이미 좋음:
+  - Tool 개발자가 IMcpToolGroup만 구현하면 됨
+  - 메타데이터 분리 (JSON)
+  - DI 지원
+
+  표준을 먼저 완성하고, 그 다음에 고급 기능(Resources, Prompts 등)을 추가하는 순서가 맞습니다. 프레임워크 사용자들이 "표준을 믿고" 사용할 수 있어야 하니까요.
+
+
+  ---
+
+  ● 🔍 MCP Server Framework 프로젝트 분석 결과
+
+  📋 현재 구현 상태 요약
+
+  ✅ 잘 구현된 부분:
+  - 기본 MCP 도구 실행 아키텍처 (SDK, Core, Server 분리)
+  - JSON-RPC 2.0 기본 메시지 처리
+  - Tool 로딩 및 실행 시스템
+  - STDIO/HTTP 전송 지원
+  - 로깅 시스템
+
+  🚨 주요 보강 필요 부분 (우선순위별)
+
+  1. 높음 (즉시 개선 필요)
+
+  1. MCP 프로토콜 버전 업데이트
+    - 현재: 2024-11-05 → 최신: 2025-06-18
+    - 위치: McpMessageDispatcher.cs:49
+  2. 필수 MCP 메소드 누락
+    - ping (연결 상태 확인)
+    - notifications/initialized (초기화 완료 알림)
+  3. 에러 처리 완성
+    - PARSE_ERROR (-32700) 누락
+    - INVALID_REQUEST (-32600) 누락
+  4. 클라이언트 Capabilities 검증
+    - 현재 서버만 capabilities 제공, 클라이언트 검증 없음
+
+  2. 중간 (기능 확장)
+
+  1. Resources 기능
+    - resources/list, resources/read 등
+    - 파일/데이터 리소스 접근 기능
+  2. Prompts 기능
+    - prompts/list, prompts/get
+    - 프롬프트 템플릿 관리
+  3. 동적 로깅 제어
+    - logging/setLevel 메소드
+  4. 설정 검증 및 기본값
+    - appsettings.json 스키마 검증
+    - 필수 설정 누락 시 기본값 처리
+
+  3. 낮음 (개선 사항)
+
+  1. Performance & Monitoring
+    - Tool 실행 시간 측정 (MCP 특성상 불필요할 수 있음)
+    - 메모리 사용량 모니터링 (MCP 특성상 불필요할 수 있음)
+  2. 고급 MCP 기능
+    - sampling/createMessage
+    - completion/complete
+    - roots/list
+  3. 개발자 경험 개선
+    - Tool 개발 가이드 문서
+    - 예제 Tool 추가
+
+  💡 MCP 특성 고려사항
+
+  불필요한 일반적 기능들:
+  - ❌ 복잡한 메트릭 시스템 (MCP는 단순한 요청-응답 패턴)
+  - ❌ 세션 관리 (MCP는 상태 없는 프로토콜)
+  - ❌ 인증/권한 시스템 (MCP는 신뢰된 환경에서 실행)
+  - ❌ 스케일링/로드밸런싱 (MCP는 단일 프로세스 모델)
+
+  📈 권장 개선 순서
+
+  1. 프로토콜 호환성 (McpMessageDispatcher.cs:49 버전 업데이트)
+  2. ping 메소드 추가
+  3. 에러 처리 완성
+  4. notifications/initialized 지원
+  5. Resources/Prompts 기능 (필요시)
