@@ -1,6 +1,7 @@
 using System;
 using Micube.MCP.Core.Dispatcher;
 using Micube.MCP.Core.Models;
+using Micube.MCP.SDK.Exceptions;
 using Micube.MCP.SDK.Interfaces;
 using Newtonsoft.Json;
 
@@ -27,7 +28,7 @@ public class StdioRunner
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         using var reader = new StreamReader(Console.OpenStandardInput());
 
-        while (cancellationToken.IsCancellationRequested == false)
+        while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
@@ -35,26 +36,68 @@ public class StdioRunner
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
                 _logger.LogDebug($"[STDIO] Input: {line}");
-
-                var request = JsonConvert.DeserializeObject<McpMessage>(line);
-
-                var response = await _dispatcher.HandleAsync(request!);
-
-                if (response == null)
-                {
-                    _logger.LogDebug("[STDIO] No response (notification)");
-                    continue; // 알림의 경우 응답하지 않음
-                }
-
-                await Console.Out.WriteLineAsync(JsonConvert.SerializeObject(response, _jsonSettings));
-                await Console.Out.FlushAsync();
-                _logger.LogDebug($"[STDIO] Output: {JsonConvert.SerializeObject(response)}");
-
+                await ProcessMessageAsync(line);
             }
             catch (Exception ex)
             {
                 _logger.LogError("[STDIO] Error processing message", ex);
             }
         }
+    }
+
+    private async Task ProcessMessageAsync(string line)
+    {
+        // 1. JSON 파싱
+        var request = TryParseMessage(line);
+        if (request == null) return; // 파싱 실패 시 이미 에러 응답 전송됨
+
+        // 2. 메시지 처리
+        var response = await _dispatcher.HandleAsync(request);
+
+        if (response == null)
+        {
+            _logger.LogDebug("[STDIO] No response generated (notification or unsupported method)");
+            return; // 알림 또는 지원하지 않는 메서드인 경우 응답 없음
+        }
+
+        await SendResponseAsync(response);
+    }
+
+    private McpMessage? TryParseMessage(string line)
+    {
+        try
+        {
+            return JsonConvert.DeserializeObject<McpMessage>(line);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError($"[STDIO] JSON parsing failed: {ex.Message}");
+            SendParseErrorAsync(ex.Message).Wait(); // 동기적으로 에러 전송
+            return null;
+        }
+    }
+
+    private async Task SendParseErrorAsync(string errorDetail)
+    {
+        var parseError = new McpErrorResponse
+        {
+            Id = null,
+            Error = new McpError
+            {
+                Code = McpErrorCodes.PARSE_ERROR,
+                Message = "Parse error",
+                Data = JsonConvert.SerializeObject(errorDetail)
+            }
+        };
+
+        await Console.Out.WriteLineAsync(JsonConvert.SerializeObject(parseError, _jsonSettings));
+        await Console.Out.FlushAsync();
+    }
+
+    private async Task SendResponseAsync(object response)
+    {
+        await Console.Out.WriteLineAsync(JsonConvert.SerializeObject(response, _jsonSettings));
+        await Console.Out.FlushAsync();
+        _logger.LogDebug($"[STDIO] Output: {JsonConvert.SerializeObject(response)}");
     }
 }
