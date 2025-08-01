@@ -2,7 +2,7 @@ using System;
 using Micube.MCP.Core.Services;
 using Micube.MCP.Core.Utils;
 
-namespace Micube.MCP.Core;
+namespace Micube.MCP.Core.Extensions;
 
 public static class CapabilitiesExtensions
 {
