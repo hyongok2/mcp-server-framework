@@ -16,6 +16,8 @@ public static class JsonRpcConstants
         public const string NotificationsInitialized = "notifications/initialized";
         public const string ResourcesList = "resources/list";
         public const string ResourcesRead = "resources/read";
+        public const string PromptsList = "prompts/list";
+        public const string PromptsGet = "prompts/get";
     }
 
     public static class ServerInfo

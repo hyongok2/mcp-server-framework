@@ -21,6 +21,8 @@ public class SystemContextHostedService : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+         _logger.LogInfo("Starting MCP Server Framework");
+         
         if (_features.EnableStdio)
         {
             var stdioRunner = new StdioRunner(_dispatcher, _logger);
@@ -33,6 +35,8 @@ public class SystemContextHostedService : IHostedService
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInfo("Stopping MCP Server Framework");
+
         await _logger.ShutdownAsync();
     }
 }

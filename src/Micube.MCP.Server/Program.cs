@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Micube.MCP.Core.Dispatcher;
 using Micube.MCP.Core.Handlers;
 using Micube.MCP.Core.Handlers.Core;
+using Micube.MCP.Core.Handlers.Prompts;
 using Micube.MCP.Core.Handlers.Resources;
 using Micube.MCP.Core.Handlers.Tools;
 using Micube.MCP.Core.Loader;
@@ -40,6 +41,7 @@ void RegisterServices(IServiceCollection services)
     builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection("Features"));
     builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("Logging"));
     builder.Services.Configure<ResourceOptions>(builder.Configuration.GetSection("Resources"));
+    builder.Services.Configure<PromptOptions>(builder.Configuration.GetSection("Prompts"));
 
     services.AddHostedService<SystemContextHostedService>();
     services.AddControllers();
@@ -76,6 +78,13 @@ void RegisterServices(IServiceCollection services)
         return new ResourceService(logger, resourceOptions);
     });
 
+    services.AddSingleton<IPromptService>(sp =>
+    {
+        var logger = sp.GetRequiredService<IMcpLogger>();
+        var promptOptions = sp.GetRequiredService<IOptions<PromptOptions>>().Value;
+        return new PromptService(logger, promptOptions);
+    });
+
     services.AddSingleton<ICapabilitiesService, CapabilitiesService>();
     services.AddSingleton<IMessageValidator, MessageValidator>();
     services.AddSingleton<ISessionState, SessionState>();
@@ -88,6 +97,8 @@ void RegisterServices(IServiceCollection services)
     services.AddTransient<IMethodHandler, ToolsCallHandler>();
     services.AddTransient<IMethodHandler, ResourcesListHandler>();
     services.AddTransient<IMethodHandler, ResourcesReadHandler>();
+    services.AddTransient<IMethodHandler, PromptsListHandler>();
+    services.AddTransient<IMethodHandler, PromptsGetHandler>();
 
     services.AddSingleton<IToolQueryService, ToolQueryService>();
     services.AddSingleton<IToolDispatcher>(sp =>
@@ -104,4 +115,5 @@ void RegisterServices(IServiceCollection services)
         return new ToolDispatcher(groups, logger);
     });
     services.AddSingleton<IMcpMessageDispatcher, McpMessageDispatcher>();
+
 }
