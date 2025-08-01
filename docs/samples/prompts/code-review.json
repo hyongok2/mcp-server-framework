@@ -1,0 +1,19 @@
+{
+  "name": "code-review",
+  "description": "코드 리뷰를 위한 프롬프트",
+  "templateFile": "code-review.md",
+  "arguments": [
+    {
+      "name": "code",
+      "description": "리뷰할 코드",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "language",
+      "description": "프로그래밍 언어",
+      "type": "string",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "simple-echo",
+  "description": "간단한 에코 테스트",
+  "templateFile": "simple-echo.md",
+  "arguments": [
+    {
+      "name": "message",
+      "description": "에코할 메시지",
+      "type": "string",
+      "required": true
+    }
+  ]
+}

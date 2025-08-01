@@ -1,0 +1,25 @@
+{
+  "name": "documentation",
+  "description": "기술 문서 작성 도움",
+  "templateFile": "templates/documentation-template.md",
+  "arguments": [
+    {
+      "name": "project_name",
+      "description": "프로젝트 이름",
+      "type": "string", 
+      "required": true
+    },
+    {
+      "name": "description",
+      "description": "프로젝트 설명",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "author",
+      "description": "작성자",
+      "type": "string",
+      "required": false
+    }
+  ]
+}
