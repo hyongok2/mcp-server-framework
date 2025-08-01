@@ -37,12 +37,19 @@ public class StdioRunner
                 _logger.LogDebug($"[STDIO] Input: {line}");
 
                 var request = JsonConvert.DeserializeObject<McpMessage>(line);
+
                 var response = await _dispatcher.HandleAsync(request!);
+
+                if (response == null)
+                {
+                    _logger.LogDebug("[STDIO] No response (notification)");
+                    continue; // 알림의 경우 응답하지 않음
+                }
 
                 await Console.Out.WriteLineAsync(JsonConvert.SerializeObject(response, _jsonSettings));
                 await Console.Out.FlushAsync();
-
                 _logger.LogDebug($"[STDIO] Output: {JsonConvert.SerializeObject(response)}");
+
             }
             catch (Exception ex)
             {

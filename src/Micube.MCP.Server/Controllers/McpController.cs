@@ -51,6 +51,13 @@ public class McpController : ControllerBase
 
         var result = await _dispatcher.HandleAsync(message);
 
+        if (result == null)
+        {
+            _logger.LogInfo("[HTTP] Notification processed, no response");
+            // 알림의 경우 204 No Content 반환
+            return NoContent();
+        }
+
         _logger.LogInfo($"[HTTP] Response: {JsonConvert.SerializeObject(result, _jsonLogSettings)}");
 
         return Ok(result);

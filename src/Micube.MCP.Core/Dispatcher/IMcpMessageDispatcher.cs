@@ -5,5 +5,5 @@ namespace Micube.MCP.Core.Dispatcher;
 
 public interface IMcpMessageDispatcher
 {
-    Task<object> HandleAsync(McpMessage message);
+    Task<object?> HandleAsync(McpMessage message); 
 }
