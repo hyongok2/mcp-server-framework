@@ -1,8 +1,13 @@
 using Microsoft.Extensions.Options;
 using Micube.MCP.Core.Dispatcher;
+using Micube.MCP.Core.Handlers;
+using Micube.MCP.Core.Handlers.Core;
+using Micube.MCP.Core.Handlers.Tools;
 using Micube.MCP.Core.Loader;
 using Micube.MCP.Core.Logging;
 using Micube.MCP.Core.Services;
+using Micube.MCP.Core.Session;
+using Micube.MCP.Core.Validation;
 using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.Server;
 using Micube.MCP.Server.Options;
@@ -60,6 +65,18 @@ void RegisterServices(IServiceCollection services)
 
         return new LogDispatcher(writers, level);
     });
+    // 검증 시스템
+    services.AddSingleton<IMessageValidator, MessageValidator>();
+    
+    // 세션 관리
+    services.AddSingleton<ISessionState, SessionState>();
+    
+    // 핸들러들 등록
+    services.AddTransient<IMethodHandler, InitializeHandler>();
+    services.AddTransient<IMethodHandler, PingHandler>();
+    services.AddTransient<IMethodHandler, InitializedNotificationHandler>();
+    services.AddTransient<IMethodHandler, ToolsListHandler>();
+    services.AddTransient<IMethodHandler, ToolsCallHandler>();
 
     services.AddSingleton<IToolQueryService, ToolQueryService>();
     services.AddSingleton<IToolDispatcher>(sp =>
