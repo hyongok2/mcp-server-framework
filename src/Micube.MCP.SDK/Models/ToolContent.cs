@@ -10,6 +10,12 @@ public class ToolContent
     [JsonProperty("text")]
     public string? Text { get; set; }
 
+    [JsonProperty("data")]
+    public object? Data { get; set; }  // 구조화된 데이터용
+
+    [JsonProperty("mimeType")]
+    public string? MimeType { get; set; }  // 데이터 타입 명시
+
     public ToolContent() { }
 
     public ToolContent(string type, string? text)

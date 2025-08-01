@@ -35,7 +35,7 @@ public abstract class BaseToolGroup : IMcpToolGroup
         }
     }
 
-    public async Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters)
+    public async Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
     {
         Logger.LogDebug($"Invoking tool '{toolName}' in group '{GroupName}' with parameters: {JsonConvert.SerializeObject(parameters, Formatting.None, new JsonSerializerSettings
         {
@@ -43,7 +43,7 @@ public abstract class BaseToolGroup : IMcpToolGroup
         })}");
 
         if (!_toolMethodCache.TryGetValue(toolName, out var method))
-            throw new McpToolNotFoundException($"Tool '{toolName}' not found in group '{GroupName}'.");
+            throw new McpException($"Tool '{toolName}' not found in group '{GroupName}'.");
 
         var result = method.Invoke(this, new object[] { parameters });
 

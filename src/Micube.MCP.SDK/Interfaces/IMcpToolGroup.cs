@@ -17,7 +17,7 @@ public interface IMcpToolGroup
     /// <param name="toolName">호출할 기능 이름 (ex. "ReadTag")</param>
     /// <param name="parameters">파라미터 키-값 쌍</param>
     /// <returns>실행 결과 (object or null)</returns>
-    Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters);
+    Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default);
 
     /// <summary> ToolGroup 자체 Config 주입 </summary>
     void Configure(JsonElement? config);

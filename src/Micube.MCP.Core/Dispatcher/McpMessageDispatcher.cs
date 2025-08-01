@@ -1,6 +1,7 @@
 using System;
 using Micube.MCP.Core.Models;
 using Micube.MCP.Core.Services;
+using Micube.MCP.SDK.Exceptions;
 using Micube.MCP.SDK.Interfaces;
 using Newtonsoft.Json;
 
@@ -28,12 +29,12 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
                 "initialize" => await HandleInitializeAsync(message),
                 "tools/list" => HandleToolList(message),
                 "tools/call" => await HandleToolInvoke(message),
-                _ => CreateErrorResponse(message.Id, -32601, "Method not found", message.Method)
+                _ => CreateErrorResponse(message.Id, McpErrorCodes.METHOD_NOT_FOUND, "Method not found", message.Method)
             };
         }
         catch (Exception ex)
         {
-            return CreateErrorResponse(message.Id, -32603, "Internal error", ex.Message);
+            return CreateErrorResponse(message.Id, McpErrorCodes.INTERNAL_ERROR, "Internal error", ex.Message);
         }
     }
 
@@ -46,11 +47,11 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
             Id = message.Id,
             Result = new
             {
-                protocolVersion = "2024-11-05",
+                protocolVersion = "2025-06-18",
                 serverInfo = new
                 {
                     name = "Micube MCP Server Framework",
-                    version = "1.0.0",
+                    version = "0.0.0",
                     description = "A modular and extensible tool execution framework."
                 },
                 capabilities = new
@@ -90,14 +91,14 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
 
         if (call == null || string.IsNullOrEmpty(call.Name))
         {
-            return CreateErrorResponse(request.Id, -32602, "Invalid params", "Tool name is required");
+            return CreateErrorResponse(request.Id, McpErrorCodes.INVALID_PARAMS, "Invalid params", "Tool name is required");
         }
 
         var result = await _toolDispatcher.InvokeAsync(call.Name, call.Arguments);
 
         if (result.IsError)
         {
-            return CreateErrorResponse(request.Id, -32603, "Tool execution failed", result.Content);
+            return CreateErrorResponse(request.Id, McpErrorCodes.INTERNAL_ERROR, "Tool execution failed", result.Content);
         }
 
         return new McpSuccessResponse

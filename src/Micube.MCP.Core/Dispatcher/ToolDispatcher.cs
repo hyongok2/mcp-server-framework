@@ -20,7 +20,7 @@ public class ToolDispatcher : IToolDispatcher
             StringComparer.OrdinalIgnoreCase);
     }
 
-    public async Task<ToolCallResult> InvokeAsync(string fullToolName, Dictionary<string, object> parameters)
+    public async Task<ToolCallResult> InvokeAsync(string fullToolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
     {
         var parts = fullToolName.Split('_', 2);
         if (parts.Length != 2)

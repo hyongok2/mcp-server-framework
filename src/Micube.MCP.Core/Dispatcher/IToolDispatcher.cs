@@ -6,7 +6,7 @@ namespace Micube.MCP.Core.Dispatcher;
 
 public interface IToolDispatcher
 {
-    Task<ToolCallResult> InvokeAsync(string fullToolName, Dictionary<string, object> parameters);
+    Task<ToolCallResult> InvokeAsync(string fullToolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default);
     List<string> GetAvailableGroups();
     ToolGroupMetadata? GetGroupMetadata(string groupName);
 }
