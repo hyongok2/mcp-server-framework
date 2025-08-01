@@ -2,9 +2,11 @@ using Microsoft.Extensions.Options;
 using Micube.MCP.Core.Dispatcher;
 using Micube.MCP.Core.Handlers;
 using Micube.MCP.Core.Handlers.Core;
+using Micube.MCP.Core.Handlers.Resources;
 using Micube.MCP.Core.Handlers.Tools;
 using Micube.MCP.Core.Loader;
 using Micube.MCP.Core.Logging;
+using Micube.MCP.Core.Options;
 using Micube.MCP.Core.Services;
 using Micube.MCP.Core.Session;
 using Micube.MCP.Core.Validation;
@@ -37,6 +39,7 @@ void RegisterServices(IServiceCollection services)
     builder.Services.Configure<ToolGroupOptions>(builder.Configuration.GetSection("ToolGroups"));
     builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection("Features"));
     builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("Logging"));
+    builder.Services.Configure<ResourceOptions>(builder.Configuration.GetSection("Resources"));
 
     services.AddHostedService<SystemContextHostedService>();
     services.AddControllers();
@@ -66,12 +69,15 @@ void RegisterServices(IServiceCollection services)
         return new LogDispatcher(writers, level);
     });
 
+    services.AddSingleton<IResourceService>(sp =>
+    {
+        var logger = sp.GetRequiredService<IMcpLogger>();
+        var resourceOptions = sp.GetRequiredService<IOptions<ResourceOptions>>().Value;
+        return new ResourceService(logger, resourceOptions);
+    });
+
     services.AddSingleton<ICapabilitiesService, CapabilitiesService>();
-
-    // 검증 시스템
     services.AddSingleton<IMessageValidator, MessageValidator>();
-
-    // 세션 관리
     services.AddSingleton<ISessionState, SessionState>();
 
     // 핸들러들 등록
@@ -80,6 +86,8 @@ void RegisterServices(IServiceCollection services)
     services.AddTransient<IMethodHandler, InitializedNotificationHandler>();
     services.AddTransient<IMethodHandler, ToolsListHandler>();
     services.AddTransient<IMethodHandler, ToolsCallHandler>();
+    services.AddTransient<IMethodHandler, ResourcesListHandler>();
+    services.AddTransient<IMethodHandler, ResourcesReadHandler>();
 
     services.AddSingleton<IToolQueryService, ToolQueryService>();
     services.AddSingleton<IToolDispatcher>(sp =>
