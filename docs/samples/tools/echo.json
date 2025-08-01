@@ -1,0 +1,19 @@
+{
+  "GroupName": "Echo",
+  "Version": "1.0.0",
+  "Description": "Simple echo test tool",
+  "Tools": [
+    {
+      "Name": "Echo",
+      "Description": "Returns the input string.",
+      "Parameters": [
+        {
+          "Name": "text",
+          "Type": "string",
+          "Required": true,
+          "Description": "Text to echo"
+        }
+      ]
+    }
+  ]
+}
