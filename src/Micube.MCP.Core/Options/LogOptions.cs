@@ -1,6 +1,6 @@
 using System;
 
-namespace Micube.MCP.Server.Options;
+namespace Micube.MCP.Core.Options;
 
 public class LogOptions
 {
