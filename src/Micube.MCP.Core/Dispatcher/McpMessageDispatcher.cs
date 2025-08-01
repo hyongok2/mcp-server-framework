@@ -26,7 +26,7 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
         _sessionState = sessionState;
         _logger = logger;
         _handlers = handlers.ToDictionary(h => h.MethodName, h => h, StringComparer.OrdinalIgnoreCase);
-        
+
         _logger.LogInfo($"McpMessageDispatcher initialized with {_handlers.Count} handlers:");
         foreach (var handler in _handlers)
         {
@@ -36,6 +36,17 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
 
     public async Task<object?> HandleAsync(McpMessage message)
     {
+        if (message == null)
+        {
+            _logger.LogError("Received null message");
+            return ErrorResponseFactory.Create(null, McpErrorCodes.INVALID_REQUEST,
+            "Invalid request", "Message cannot be null");
+        }
+
+        var requestId = message.Id ?? "unknown";
+
+        _logger.LogDebug($"Received message: {message.Method}", requestId);
+
         // 1. 메시지 검증
         var validation = _validator.Validate(message);
         if (!validation.IsValid)
@@ -43,7 +54,7 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
             if (validation.ErrorResponse != null)
             {
                 validation.ErrorResponse.Id = message?.Id;
-                _logger.LogError($"Message validation failed: {validation.ErrorResponse.Error?.Message}");
+                _logger.LogError($"Message validation failed: {validation.ErrorResponse.Error?.Message}", requestId);
             }
             return validation.ErrorResponse;
         }
@@ -51,15 +62,15 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
         // 2. 핸들러 찾기
         if (!_handlers.TryGetValue(message.Method!, out var handler))
         {
-            _logger.LogError($"Method not found: {message.Method}");
-            return ErrorResponseFactory.Create(message.Id, McpErrorCodes.METHOD_NOT_FOUND, 
+            _logger.LogError($"Method not found: {message.Method}", requestId);
+            return ErrorResponseFactory.Create(message.Id, McpErrorCodes.METHOD_NOT_FOUND,
                 "Method not found", message.Method);
         }
 
         // 3. 초기화 상태 확인
         if (handler.RequiresInitialization && !_sessionState.IsInitialized)
         {
-            _logger.LogError($"Method '{message.Method}' called before initialization");
+            _logger.LogError($"Method '{message.Method}' called before initialization", requestId);
             return ErrorResponseFactory.Create(message.Id, McpErrorCodes.INVALID_REQUEST,
                 "Server not initialized", "Call initialize first");
         }
@@ -67,20 +78,23 @@ public class McpMessageDispatcher : IMcpMessageDispatcher
         try
         {
             // 4. 핸들러 실행
-            _logger.LogDebug($"Executing handler for method: {message.Method}");
+            _logger.LogInfo($"Executing method: {message.Method}", requestId);
             var result = await handler.HandleAsync(message);
-            
+
             if (result == null)
             {
-                _logger.LogDebug($"Handler returned null (notification): {message.Method}");
+                _logger.LogDebug($"Notification processed: {message.Method}", requestId);
+                return null; // 알림의 경우 응답 없음
             }
-            
+
+            _logger.LogInfo($"Method completed: {message.Method}", requestId);
+
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Unhandled exception in method '{message.Method}': {ex.Message}", ex);
-            return ErrorResponseFactory.Create(message.Id, McpErrorCodes.INTERNAL_ERROR, 
+            _logger.LogError($"Unhandled exception in method '{message.Method}': {ex.Message}", requestId, ex);
+            return ErrorResponseFactory.Create(message.Id, McpErrorCodes.INTERNAL_ERROR,
                 "Internal error", ex.Message);
         }
     }

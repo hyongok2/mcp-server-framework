@@ -37,6 +37,26 @@ public class LogDispatcher : IMcpLogger
         Write(LogLevel.Error, message, ex);
     }
 
+    public void LogInfo(string message, object? requestId)
+    {
+        Write(LogLevel.Info, FormatWithRequestId(message, requestId));
+    }
+
+    public void LogDebug(string message, object? requestId)
+    {
+        Write(LogLevel.Debug, FormatWithRequestId(message, requestId));
+    }
+
+    public void LogError(string message, object? requestId, Exception? ex = null)
+    {
+        Write(LogLevel.Error, FormatWithRequestId(message, requestId), ex);
+    }
+
+    private static string FormatWithRequestId(string message, object? requestId)
+    {
+        return requestId != null ? $"[ID:{requestId}] {message}" : message;
+    }
+
     private void Write(LogLevel level, string message, Exception? ex = null)
     {
         if (level < _minLevel) return;

@@ -51,16 +51,20 @@ public class StdioRunner
         var request = TryParseMessage(line);
         if (request == null) return; // 파싱 실패 시 이미 에러 응답 전송됨
 
+        var requestId = request.Id ?? "unknown";
+        _logger.LogInfo($"[STDIO] Processing message: {request.Method}", requestId);
+
         // 2. 메시지 처리
         var response = await _dispatcher.HandleAsync(request);
 
         if (response == null)
         {
-            _logger.LogDebug("[STDIO] No response generated (notification or unsupported method)");
+            _logger.LogDebug("[STDIO] No response generated (notification or unsupported method)", requestId);
             return; // 알림 또는 지원하지 않는 메서드인 경우 응답 없음
         }
 
         await SendResponseAsync(response);
+        _logger.LogDebug("[STDIO] Response sent", requestId);
     }
 
     private McpMessage? TryParseMessage(string line)

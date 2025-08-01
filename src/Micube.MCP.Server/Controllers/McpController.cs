@@ -48,6 +48,15 @@ public class McpController : ControllerBase
                 error = "HTTP interface is currently disabled by configuration."
             });
         }
+        
+        if (message == null)
+        {
+            _logger.LogError("[HTTP] Received null message");
+            return BadRequest(new
+            {
+                error = "Invalid request: message cannot be null"
+            });
+        }
 
         var result = await _dispatcher.HandleAsync(message);
 
