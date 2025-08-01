@@ -65,12 +65,15 @@ void RegisterServices(IServiceCollection services)
 
         return new LogDispatcher(writers, level);
     });
+
+    services.AddSingleton<ICapabilitiesService, CapabilitiesService>();
+
     // 검증 시스템
     services.AddSingleton<IMessageValidator, MessageValidator>();
-    
+
     // 세션 관리
     services.AddSingleton<ISessionState, SessionState>();
-    
+
     // 핸들러들 등록
     services.AddTransient<IMethodHandler, InitializeHandler>();
     services.AddTransient<IMethodHandler, PingHandler>();
