@@ -7,6 +7,7 @@ public class ToolCallResult
 {
     [JsonProperty("content")]
     public List<ToolContent> Content { get; set; } = new();
+    
     [JsonProperty("isError")]
     public bool IsError { get; set; } = false;
 
@@ -19,12 +20,21 @@ public class ToolCallResult
         };
     }
 
+    public static ToolCallResult SuccessStructured(object data, object? schema = null)
+    {
+        return new ToolCallResult
+        {
+            IsError = false,
+            Content = new List<ToolContent> { new ToolContent(data, schema) }
+        };
+    }
+
     public static ToolCallResult Fail(string message)
     {
         return new ToolCallResult
         {
             IsError = true,
-            Content = new List<ToolContent> { new("text", message) }
+            Content = new List<ToolContent> { new ToolContent("text", message) }
         };
     }
 }
