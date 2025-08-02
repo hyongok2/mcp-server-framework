@@ -7,6 +7,7 @@ using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.SDK.Models;
 using Newtonsoft.Json;
 using Oracle.ManagedDataAccess.Types;
+using System.Reflection;
 
 namespace OracleDbTools;
 
@@ -14,12 +15,19 @@ namespace OracleDbTools;
 public class OracleDbToolGroup : BaseToolGroup
 {
     public override string GroupName => "OracleDbTools";
-    
+
     private string? _connectionString;
     private int _commandTimeoutSeconds = 30;
     private int _maxResultRows = 10000;
 
-    public OracleDbToolGroup(IMcpLogger logger) : base(logger) { }
+    public OracleDbToolGroup(IMcpLogger logger) : base(logger)
+    {
+        // OracleConfiguration.TnsAdmin 설정
+        // TNS_ADMIN 경로는 DLL이 위치한 디렉토리로 설정 - 이렇게 해야 같은 경로의 tnsnames.ora 파일을 사용할 수 있습니다.
+        var dllDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        OracleConfiguration.TnsAdmin = dllDirectory;
+        Logger.LogInfo("[OracleTools] Configuration initialized with TNS_ADMIN: " + OracleConfiguration.TnsAdmin);
+    }
 
     protected override void OnConfigure(JsonElement? config)
     {
@@ -95,8 +103,9 @@ public class OracleDbToolGroup : BaseToolGroup
                 rowCount = results.Count,
                 columnCount = reader.FieldCount,
                 columns = Enumerable.Range(0, reader.FieldCount)
-                    .Select(i => new { 
-                        name = reader.GetName(i), 
+                    .Select(i => new
+                    {
+                        name = reader.GetName(i),
                         type = reader.GetDataTypeName(i),
                         fieldType = reader.GetFieldType(i).Name
                     }).ToArray(),
@@ -104,7 +113,7 @@ public class OracleDbToolGroup : BaseToolGroup
             };
 
             Logger.LogInfo($"[OracleTools] Query executed successfully. Returned {results.Count} rows.");
-            
+
             return new { data = results, metadata };
         }
         catch (OracleException ex)
@@ -146,7 +155,7 @@ public class OracleDbToolGroup : BaseToolGroup
             };
 
             var affected = await cmd.ExecuteNonQueryAsync();
-            
+
             Logger.LogInfo($"[OracleTools] Command executed successfully: {sql.Substring(0, Math.Min(50, sql.Length))}...");
             return ToolCallResult.Success($"Command executed successfully. Rows affected: {affected}");
         }
@@ -326,12 +335,12 @@ public class OracleDbToolGroup : BaseToolGroup
     /// </summary>
     private static bool IsDangerousCommand(string sql)
     {
-        var dangerous = new[] 
-        { 
-            "DROP DATABASE", "DROP SCHEMA", "DROP USER", "TRUNCATE", 
+        var dangerous = new[]
+        {
+            "DROP DATABASE", "DROP SCHEMA", "DROP USER", "TRUNCATE",
             "SHUTDOWN", "STARTUP", "ALTER SYSTEM", "GRANT SYSDBA", "REVOKE SYSDBA"
         };
-        
+
         var upperSql = sql.ToUpperInvariant();
         return dangerous.Any(cmd => upperSql.Contains(cmd));
     }

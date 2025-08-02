@@ -38,7 +38,6 @@ MYXE =
 
 * `./tns` 폴더는 `docker-compose.yml`과 같은 경로에 있어야 합니다.
 * TNS 방식 접속(`Data Source=MYXE`)을 원하지 않으면 생략해도 됩니다.
-* 문제는 이 ora 파일이 실행파일과 같은 경로에 있어야 인식된다는 점이다. 이 문제는 추가 대책이 필요하다.(배포의 문제가 있다.)
 
 ---
 
@@ -92,3 +91,9 @@ DATABASE IS READY TO USE!
 (단, 두 번째는 `.ora` 경로 조건 충족 필요)
 
 ---
+
+
+##  **ora** 파일 사용에 관한 사항
+
+* `.ora` 파일을 사용하여 연결 설정을 하는경우 ora 파일도 dll 파일과 같은 경로에 배치할 수 있다.
+* 현재 Sample로 ora 파일 사용 Case와 Connecting String만 사용하는 Case의 json을 제공하고 있다.
