@@ -1,0 +1,77 @@
+# 설정 예시 모음
+
+# 기본 설정
+basic_config:
+  ToolGroups:
+    Directory: "tools"
+    Whitelist: 
+      - "SampleTools.dll"
+  
+  Resources:
+    Directory: "docs"
+    MetadataFileName: ".mcp-resources.json"
+  
+  Prompts:
+    Directory: "prompts"
+
+# 개발 환경 설정  
+development:
+  Logging:
+    MinLevel: "Debug"
+    File:
+      Directory: "./logs"
+      FlushIntervalSeconds: 1
+      MaxFileSizeMB: 10
+      RetentionDays: 7
+  
+  Features:
+    EnableStdio: true
+    EnableHttp: true
+
+# 프로덕션 환경 설정
+production:
+  Logging:
+    MinLevel: "Info"
+    File:
+      Directory: "/var/log/mcp-server"
+      FlushIntervalSeconds: 5
+      MaxFileSizeMB: 100
+      RetentionDays: 30
+  
+  Features:
+    EnableStdio: true
+    EnableHttp: false
+  
+  Kestrel:
+    Endpoints:
+      Http:
+        Url: "http://0.0.0.0:5000"
+
+# 도구 그룹 예시
+sample_tool_manifest:
+  GroupName: "FileOperations"
+  Version: "1.0.0"
+  Description: "파일 조작 도구 모음"
+  Tools:
+    - Name: "ReadFile"
+      Description: "파일 내용을 읽습니다"
+      Parameters:
+        - Name: "path"
+          Type: "string"
+          Required: true
+          Description: "읽을 파일 경로"
+
+# 프롬프트 예시
+sample_prompt:
+  name: "translate"
+  description: "텍스트 번역 프롬프트"
+  templateFile: "translate.md"
+  arguments:
+    - name: "text"
+      type: "string"
+      required: true
+      description: "번역할 텍스트"
+    - name: "target_lang"
+      type: "string"
+      required: true
+      description: "목표 언어"

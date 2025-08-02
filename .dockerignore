@@ -21,8 +21,14 @@ obj/
 Thumbs.db
 
 # 테스트 및 문서 제외
-DataOps.Collector.Tests/
+test/
+tests/
 docs/
+scripts/
+release_notes/
+README.md
+version_history.md
+LICENSE
 
 # 로그 및 임시 파일
 *.log

@@ -1,0 +1,7 @@
+{
+  "README.md": "MCP Server Framework 소개 문서",
+  "api-guide.md": "API 사용 가이드", 
+  "architecture.md": "시스템 아키텍처 설명",
+  "examples.yaml": "설정 예시 모음",
+  "troubleshooting.txt": "문제 해결 가이드"
+}

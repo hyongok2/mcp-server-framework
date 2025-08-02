@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: mcp-server
+    ports:
+      - "5000:5000"
+    volumes:
+      # 설정 파일 마운트
+      - ./config:/app/config:ro
+      # 로그 디렉토리 마운트
+      - ./logs:/app/logs
+      # 커스텀 도구들 마운트
+      - ./tools:/app/tools:ro
+      # 문서 리소스 마운트
+      - ./docs:/app/docs:ro
+      # 프롬프트 마운트
+      - ./prompts:/app/prompts:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://*:5000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://host.docker.internal:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+networks:
+  default:
+    name: mcp-network
