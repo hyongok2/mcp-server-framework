@@ -1,21 +1,20 @@
 ```
 docs/
 ├── 01-fundamental/           # MCP 표준 이해 및 기본 개념
-│   ├── README.md
-│   ├── what-is-mcp.md       # MCP 프로토콜 소개
-│   ├── mcp-concepts.md      # Tools, Resources, Prompts 개념
-│   ├── json-rpc-basics.md   # JSON-RPC 기본 이해
-│   └── server-overview.md   # 본 MCP 서버 프레임워크 소개
+│   ├── README.md(완료)
+│   ├── what-is-mcp.md(완료)      # MCP 프로토콜 소개
+│   ├── mcp-concepts.md(완료)  # Tools, Resources, Prompts 개념
+│   ├── json-rpc-basics.md(완료)   # JSON-RPC 기본 이해
+│   └── server-overview.md(완료)   # 본 MCP 서버 프레임워크 소개
 ├── 02-getting-started/       # 빠른 시작
-│   ├── README.md
-│   ├── installation.md      # 설치 방법
-│   ├── first-run.md         # 첫 실행
-│   └── basic-usage.md       # 기본 사용법
+│   ├── README.md(완료)
+│   ├── installation.md(완료)      # 설치 방법
+│   ├── first-run.md(완료)         # 첫 실행
+│   └── basic-usage.md(완료)       # 기본 사용법
 ├── 03-configuration/         # 설정 관리
 │   ├── README.md
 │   ├── server-config.md     # 서버 설정 (appsettings.json)
 │   ├── client-connection.md # MCP 클라이언트 연결 설정
-│   ├── environment-setup.md # 환경별 설정 (dev/prod)
 │   └── connection-examples/ # 다양한 연결 방법 예제
 │       ├── stdio-connection.md
 │       ├── http-connection.md
@@ -32,8 +31,7 @@ docs/
 │   ├── README.md
 │   ├── production-setup.md  # 프로덕션 환경 구성
 │   ├── docker-deployment.md # Docker 배포
-│   ├── monitoring.md        # 모니터링 및 로깅
-│   └── security.md          # 보안 가이드
+│   └── monitoring.md        # 모니터링 및 로깅
 ├── 06-architecture/          # 시스템 구조
 │   ├── README.md
 │   ├── system-overview.md   # 전체 구조
