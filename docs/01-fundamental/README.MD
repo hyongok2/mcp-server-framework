@@ -54,7 +54,6 @@ MCP Server Framework를 효과적으로 사용하기 위해서는 먼저 MCP 프
 
 - [MCP 공식 사이트](https://modelcontextprotocol.io/)
 - [JSON-RPC 2.0 명세](https://www.jsonrpc.org/specification)
-- [프로젝트 GitHub](https://github.com/your-org/mcp-server-framework)
 
 ---
 

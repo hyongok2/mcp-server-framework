@@ -45,7 +45,6 @@
     - [STDIO 연결](./docs/03-configuration/connection-examples/stdio-connection.md)
     - [HTTP 연결](./docs/03-configuration/connection-examples/http-connection.md)
     - [Docker 연결](./docs/03-configuration/connection-examples/docker-connection.md)
-    - [Claude Desktop 연동](./docs/03-configuration/connection-examples/claude-desktop.md)
 
 #### **4. 개발 가이드** 🔧
 - **[Development](./docs/04-development/README.md)** - 도구 개발과 확장
@@ -57,9 +56,7 @@
 
 #### **5. 배포 및 운영** 🚀
 - **[Deployment](./docs/05-deployment/README.md)** - 실제 환경 배포와 운영
-  - [프로덕션 설정](./docs/05-deployment/production-setup.md) - 운영 환경 최적화
-  - [Docker 배포](./docs/05-deployment/docker-deployment.md) - 컨테이너 기반 배포
-  - [모니터링](./docs/05-deployment/monitoring.md) - 로깅과 헬스체크
+  - [Docker 배포](./docs/05-deployment/docker-release.md) - 컨테이너 기반 배포
 
 ### **📋 참조 자료**
 
@@ -75,22 +72,11 @@
   - [HTTP 엔드포인트](./docs/07-api/endpoints.md) - REST API 명세
   - [에러 코드](./docs/07-api/error-codes.md) - 에러 코드 참조
 
-#### **8. 예제 모음** 💡
-- **[Examples](./docs/08-examples/README.md)** - 실전 예제와 튜토리얼
-  - [기본 도구 예제](./docs/08-examples/basic-tools.md) - 간단한 도구 구현
-  - [고급 시나리오](./docs/08-examples/advanced-scenarios.md) - 복합 워크플로우
-  - [통합 예제](./docs/08-examples/integration-examples/) - 실제 사용 사례
-    - [제조업 IoT 연동](./docs/08-examples/integration-examples/manufacturing-iot.md)
-    - [개발 도구 통합](./docs/08-examples/integration-examples/dev-tools.md)
-    - [문서 관리 시스템](./docs/08-examples/integration-examples/document-system.md)
-
 ### **🛠️ 지원 및 문제 해결**
 
-#### **9. 문제 해결** 🔍
+#### **8. 문제 해결** 🔍
 - **[Troubleshooting](./docs/09-troubleshooting/README.md)** - 문제 진단과 해결
-  - [일반적인 문제](./docs/09-troubleshooting/common-issues.md) - 자주 발생하는 문제들
-  - [디버깅 가이드](./docs/09-troubleshooting/debugging.md) - 효과적인 디버깅 방법
-  - [FAQ](./docs/09-troubleshooting/faq.md) - 자주 묻는 질문
+
 
 
 ## 📄 라이선스
