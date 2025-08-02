@@ -13,6 +13,7 @@ using Micube.MCP.Core.Session;
 using Micube.MCP.Core.Validation;
 using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.Server;
+using Micube.MCP.Server.Middleware;
 using Micube.MCP.Server.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,7 @@ RegisterServices(builder.Services);
 
 var app = builder.Build();
 
+app.UseGlobalExceptionHandler();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.MapControllers();
