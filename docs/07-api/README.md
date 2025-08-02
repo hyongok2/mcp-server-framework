@@ -157,34 +157,6 @@ MCP Server Framework는 **JSON-RPC 2.0** 프로토콜을 기반으로 다음 API
 }
 ```
 
-**구조화된 데이터 응답:**
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 4,
-  "result": {
-    "content": [
-      {
-        "type": "structured",
-        "data": {
-          "files": ["file1.txt", "file2.txt"],
-          "count": 2,
-          "totalSize": 1024
-        },
-        "schema": {
-          "type": "object",
-          "properties": {
-            "files": { "type": "array" },
-            "count": { "type": "integer" },
-            "totalSize": { "type": "integer" }
-          }
-        }
-      }
-    ],
-    "isError": false
-  }
-}
-```
 
 ## 📄 Resources API
 
@@ -522,7 +494,7 @@ interface ToolCallResult {
 }
 
 interface ToolContent {
-  type: "text" | "structured" | "image" | "code";
+  type: "text" | "image" | "code";
   text?: string;
   data?: object;
   schema?: object;

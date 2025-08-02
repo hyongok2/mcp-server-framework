@@ -327,11 +327,6 @@ public class ToolCallResult
     public static ToolCallResult Success(params string[] messages);
     
     /// <summary>
-    /// 성공 결과 생성 (구조화된 데이터)
-    /// </summary>
-    public static ToolCallResult SuccessStructured(object data, object? schema = null);
-    
-    /// <summary>
     /// 실패 결과 생성
     /// </summary>
     public static ToolCallResult Fail(string message);
@@ -357,7 +352,7 @@ var result = new
     totalSize = totalBytes,
     count = fileList.Count
 };
-return ToolCallResult.SuccessStructured(result);
+return result;
 
 // 스키마 포함 구조화된 데이터
 var schema = new
@@ -370,7 +365,7 @@ var schema = new
         count = new { type = "integer" }
     }
 };
-return ToolCallResult.SuccessStructured(result, schema);
+return schema;
 
 // 에러
 return ToolCallResult.Fail("파일을 찾을 수 없습니다.");
@@ -385,7 +380,7 @@ namespace Micube.MCP.SDK.Models;
 public class ToolContent
 {
     /// <summary>
-    /// 콘텐츠 타입 (text, image, code, structured 등)
+    /// 콘텐츠 타입 (text, image, code 등)
     /// </summary>
     [JsonProperty("type")]
     public string Type { get; set; } = "text";
@@ -532,7 +527,7 @@ private async Task<ProcessResult> ProcessFileWithTimeoutAsync(string filePath, C
 ### **리소스 관리**
 ```csharp
 [McpTool("DatabaseQuery")]
-public async Task<ToolCallResult> DatabaseQueryAsync(Dictionary<string, object> parameters)
+public async Task<object> DatabaseQueryAsync(Dictionary<string, object> parameters)
 {
     using var connection = new SqlConnection(_connectionString);
     using var command = new SqlCommand(parameters["query"].ToString(), connection);
@@ -554,7 +549,7 @@ public async Task<ToolCallResult> DatabaseQueryAsync(Dictionary<string, object> 
             results.Add(row);
         }
         
-        return ToolCallResult.SuccessStructured(new { rows = results, count = results.Count });
+        return new { rows = results, count = results.Count };
     }
     catch (SqlException ex)
     {
@@ -604,7 +599,7 @@ public class ConfigurableToolGroup : BaseToolGroup
     }
 
     [McpTool("CallExternalAPI")]
-    public async Task<ToolCallResult> CallExternalAPIAsync(Dictionary<string, object> parameters)
+    public async Task<object> CallExternalAPIAsync(Dictionary<string, object> parameters)
     {
         var serviceName = parameters["service"].ToString();
         
@@ -624,7 +619,7 @@ public class ConfigurableToolGroup : BaseToolGroup
             try
             {
                 var result = await CallAPIWithAuthAsync(endpoint, apiKey, parameters);
-                return ToolCallResult.SuccessStructured(result);
+                return result;
             }
             catch (HttpRequestException ex) when (attempt < _retryCount)
             {

@@ -34,6 +34,36 @@ graph TD
 
 ## 🏗️ 2단계: Tool Group 설계
 
+### **프로젝트 생성**
+
+* ⚠️⚠️⚠️ **아래 표시한 사항은 Tool DLL 개발에 필수입니다. 꼭 지켜야 합니다.** ⚠️⚠️⚠️
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk"> // Clase Library 프로젝트로 생성합니다.  dotnet new classlib -n SampleTools(툴이름)
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Micube.MCP.SDK\Micube.MCP.SDK.csproj" />  //이 프로젝트를 참조해야 합니다. 추후 Nuget 배포 검토 예정입니다.
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.9.1" /> // 필요한 라이브러리를 추가합니다. 관련 모든 DLL은 tools 폴더에 같이 저장. 
+  </ItemGroup>
+
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> // 이 옵션을 반드시 설정해야 합니다. 그래야만 연관된 모든 DLL이 출력 폴더에 복사 됩니다.
+  </PropertyGroup>
+
+</Project>
+
+```
+
+
 ### **기본 구조**
 ```csharp
 using Micube.MCP.SDK.Abstracts;
@@ -54,7 +84,7 @@ public class FileToolGroup : BaseToolGroup
     }
 
     [McpTool("ReadFile")]
-    public async Task<ToolCallResult> ReadFileAsync(Dictionary<string, object> parameters)
+    public async Task<object> ReadFileAsync(Dictionary<string, object> parameters)
     {
         // 구현
     }
@@ -80,7 +110,7 @@ public class FileToolGroup : BaseToolGroup
 #### **McpToolAttribute**
 ```csharp
 [McpTool("ReadFile")]  // 도구 식별자
-public async Task<ToolCallResult> ReadFileAsync(Dictionary<string, object> parameters)
+public async Task<object> ReadFileAsync(Dictionary<string, object> parameters)
 ```
 
 ## 🔨 3단계: 실제 구현
@@ -123,7 +153,7 @@ public class FileToolGroup : BaseToolGroup
     }
 
     [McpTool("ReadFile")]
-    public async Task<ToolCallResult> ReadFileAsync(Dictionary<string, object> parameters)
+    public async Task<object> ReadFileAsync(Dictionary<string, object> parameters)
     {
         try
         {
@@ -158,7 +188,7 @@ public class FileToolGroup : BaseToolGroup
             
             Logger.LogInfo($"Successfully read file: {path} ({fileInfo.Length} bytes)");
 
-            return ToolCallResult.Success(content);
+            return content;
         }
         catch (UnauthorizedAccessException)
         {
@@ -223,7 +253,7 @@ public class FileToolGroup : BaseToolGroup
     }
 
     [McpTool("ListFiles")]
-    public async Task<ToolCallResult> ListFilesAsync(Dictionary<string, object> parameters)
+    public async Task<object> ListFilesAsync(Dictionary<string, object> parameters)
     {
         try
         {
@@ -252,7 +282,7 @@ public class FileToolGroup : BaseToolGroup
 
             Logger.LogInfo($"Listed {files.Count} files in {path}");
 
-            return ToolCallResult.SuccessStructured(new { files, count = files.Count });
+            return new { files, count = files.Count };
         }
         catch (Exception ex)
         {
@@ -359,7 +389,7 @@ public class FileToolGroup : BaseToolGroup
 ### **구조화된 출력**
 ```csharp
 [McpTool("AnalyzeFile")]
-public async Task<ToolCallResult> AnalyzeFileAsync(Dictionary<string, object> parameters)
+public async Task<object> AnalyzeFileAsync(Dictionary<string, object> parameters)
 {
     // 파일 분석 로직...
     
@@ -382,7 +412,7 @@ public async Task<ToolCallResult> AnalyzeFileAsync(Dictionary<string, object> pa
         }
     };
 
-    return ToolCallResult.SuccessStructured(analysis, schema);
+    return schema;
 }
 ```
 
@@ -508,6 +538,8 @@ Logger.LogDebug($"Processing file: {path}");
 Logger.LogInfo($"File processed successfully: {result.Length} bytes");
 Logger.LogError($"Processing failed: {ex.Message}", ex);
 ```
+
+* **주의** 반드시 ToolGroup DLL 파일은 연관된 모든 DLL 파일과 함께 tools폴더에 저장해야 합니다.
 
 ---
 

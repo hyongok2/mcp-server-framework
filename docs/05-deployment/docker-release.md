@@ -68,6 +68,8 @@ tar -czf mcp-server-deployment-1.0.0.tar.gz \
     docker/docker-compose.yml
 ```
 
+* **주의** 반드시 ToolGroup DLL 파일은 연관된 모든 DLL 파일과 함께 tools폴더에 저장해야 합니다.
+
 ---
 
 ## ✅ 2. 저장된 파일 복사

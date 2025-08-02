@@ -54,3 +54,6 @@ curl http://localhost:5000/health
 - `/app/tools`: 도구 DLL
 - `/app/docs`: 리소스 파일
 - `/app/prompts`: 프롬프트 템플릿
+
+* **주의** 반드시 ToolGroup DLL 파일은 연관된 모든 DLL 파일과 함께 tools폴더에 저장해야 합니다.
+* 예를 들어 오라클연동하는 Tool인 경우 오라클라이브러리DLL을 포함하여 연관된 모든 DLL 파일을 tools 폴더에 저장해야 합니다.

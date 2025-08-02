@@ -156,20 +156,20 @@ public async Task<ToolCallResult> ProcessMultipleFilesAsync(Dictionary<string, o
 
     var results = await Task.WhenAll(tasks);
     
-    return ToolCallResult.SuccessStructured(new
+    return new
     {
         processedFiles = results.Length,
         successCount = results.Count(r => r.Success),
         failureCount = results.Count(r => !r.Success),
         results = results
-    });
+    };
 }
 ```
 
 ### **2. 메모리 효율적 스트림 처리**
 ```csharp
 [McpTool("ProcessLargeFile")]
-public async Task<ToolCallResult> ProcessLargeFileAsync(Dictionary<string, object> parameters)
+public async Task<object> ProcessLargeFileAsync(Dictionary<string, object> parameters)
 {
     var filePath = parameters["filePath"]?.ToString();
     var processedLines = 0;
@@ -208,12 +208,12 @@ public async Task<ToolCallResult> ProcessLargeFileAsync(Dictionary<string, objec
             }
         }
 
-        return ToolCallResult.SuccessStructured(new
+        return =new
         {
             processedLines,
             errorCount = errors.Count,
             errors = errors.Take(10).ToArray() // 처음 10개 에러만 반환
-        });
+        };
     }
     catch (Exception ex)
     {
@@ -231,7 +231,7 @@ public class CachedApiToolGroup : BaseToolGroup
     private readonly TimeSpan _defaultCacheExpiry = TimeSpan.FromMinutes(15);
 
     [McpTool("GetUserProfile")]
-    public async Task<ToolCallResult> GetUserProfileAsync(Dictionary<string, object> parameters)
+    public async Task<object> GetUserProfileAsync(Dictionary<string, object> parameters)
     {
         var userId = parameters["userId"]?.ToString();
         var cacheKey = $"user_profile:{userId}";
@@ -240,7 +240,7 @@ public class CachedApiToolGroup : BaseToolGroup
         if (_cache.TryGetValue(cacheKey, out var cachedProfile))
         {
             Logger.LogDebug($"Cache hit for user {userId}");
-            return ToolCallResult.SuccessStructured(cachedProfile);
+            return cachedProfile;
         }
 
         // 캐시 미스 시 API 호출
