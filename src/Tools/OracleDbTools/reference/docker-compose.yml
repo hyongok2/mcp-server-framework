@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  oracle-xe:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-xe
+    ports:
+      - "1521:1521"     # Oracle listener
+      - "8080:8080"     # APEX/HTTP (원할 시)
+    environment:
+      ORACLE_PASSWORD: oracle
+    volumes:
+      - ./oracle-data:/opt/oracle/oradata           # DB 파일 보존
+    restart: unless-stopped
