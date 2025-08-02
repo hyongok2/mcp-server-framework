@@ -1,3 +1,12 @@
 ﻿{
-
+  "profiles": {
+    "DataOps.Collector": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:60213;http://localhost:60214"
+    }
+  }
 }
