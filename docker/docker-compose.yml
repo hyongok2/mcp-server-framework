@@ -6,6 +6,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: mcp-server
+    stdin_open: true          # -i 옵션 (STDIO 필수)
     ports:
       - "5000:5000"
     volumes:
@@ -28,7 +29,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    restart: unless-stopped
+    restart: "no"  
 
 networks:
   default:

@@ -1,0 +1,109 @@
+{
+  "// === 🚀 Docker Compose 연결 (가장 권장) ===": "",
+  "mcpServers": {
+    "mcp-compose-stdio": {
+      "command": "docker",
+      "args": [
+        "compose", "-f", "C:\\tools\\mcp-server\\docker\\stdio-compose.yml",
+        "run", "--rm", "mcp-server"
+      ],
+      "env": {}
+    },
+    "mcp-compose-dev": {
+      "command": "docker", 
+      "args": [
+        "compose", "-f", "/opt/mcp-server/docker/dev-compose.yml",
+        "run", "--rm", "mcp-dev"
+      ],
+      "env": {
+        "DOTNET_USE_POLLING_FILE_WATCHER": "true"
+      }
+    }
+  },
+
+  "// === 🌍 크로스 플랫폼 Compose 설정 ===": "",
+  "mcpServers_CrossPlatform": {
+    "mcp-windows-compose": {
+      "command": "docker",
+      "args": [
+        "compose", "-f", "C:\\tools\\mcp-server\\docker-compose.yml",
+        "run", "--rm", "mcp-server"
+      ]
+    },
+    "mcp-macos-compose": {
+      "command": "docker",
+      "args": [
+        "compose", "-f", "/Users/username/mcp-server/docker-compose.yml",
+        "run", "--rm", "mcp-server"
+      ]
+    },
+    "mcp-linux-compose": {
+      "command": "docker",
+      "args": [
+        "compose", "-f", "/opt/mcp-server/docker-compose.yml",
+        "run", "--rm", "mcp-server"
+      ]
+    }
+  },
+
+  "// === ⚡ 프로덕션 vs 개발 환경 ===": "",
+  "mcpServers_Production": {
+    "mcp-prod": {
+      "command": "docker",
+      "args": [
+        "compose", "-f", "docker/prod-compose.yml",
+        "run", "--rm", "mcp-server"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
+    }
+  },
+  "mcpServers_Development": {
+    "mcp-dev": {
+      "command": "docker",
+      "args": [
+        "compose", "-f", "docker/dev-compose.yml", 
+        "run", "--rm", "mcp-dev"
+      ],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  },
+
+  "// === 🔧 고급 Compose 설정 ===": "",
+  "mcpServers_Advanced": {
+    "mcp-with-profiles": {
+      "command": "docker",
+      "args": [
+        "compose", "--profile", "claude",
+        "-f", "docker-compose.yml",
+        "run", "--rm", "mcp-server"
+      ]
+    },
+    "mcp-custom-project": {
+      "command": "docker",
+      "args": [
+        "compose", "-p", "mcp-claude",
+        "-f", "docker-compose.yml",
+        "run", "--rm", "mcp-server"
+      ]
+    }
+  },
+
+  "// === 🆘 Fallback 단순 Docker run ===": "",
+  "mcpServers_Fallback": {
+    "mcp-simple-docker": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i", "--init",
+        "--name", "mcp-server-claude",
+        "-v", "${HOME}/mcp-server/config:/app/config:ro",
+        "-v", "${HOME}/mcp-server/logs:/app/logs",
+        "-e", "Features__EnableStdio=true",
+        "mcp-server:latest"
+      ]
+    }
+  }
+}

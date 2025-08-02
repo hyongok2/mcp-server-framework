@@ -1,0 +1,251 @@
+# =============================================================================
+# 📁 docker/stdio-compose.yml - STDIO 전용 (Claude Desktop용)
+# =============================================================================
+version: '3.8'
+
+services:
+  mcp-server:
+    image: mcp-server:latest
+    container_name: mcp-server-stdio
+    stdin_open: true          # -i 옵션 (STDIO 필수)
+    tty: false               # TTY 비활성화 (STDIO에서 불필요)
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./tools:/app/tools:ro
+      - ./docs:/app/docs:ro
+      - ./prompts:/app/prompts:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Features__EnableStdio=true
+      - Features__EnableHttp=false
+      - Logging__MinLevel=Info
+    network_mode: none        # 네트워크 불필요
+    mem_limit: 512m          # 메모리 제한
+    cpus: 1.0               # CPU 제한
+    restart: "no"           # Claude Desktop이 관리
+
+---
+# =============================================================================
+# 📁 docker/http-compose.yml - HTTP 서비스용
+# =============================================================================
+version: '3.8'
+
+services:
+  mcp-server:
+    image: mcp-server:latest
+    container_name: mcp-server-http
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./tools:/app/tools:ro
+      - ./docs:/app/docs:ro
+      - ./prompts:/app/prompts:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Features__EnableStdio=false
+      - Features__EnableHttp=true
+      - Logging__MinLevel=Info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 1.0
+
+---
+# =============================================================================
+# 📁 docker/dev-compose.yml - 개발 환경용
+# =============================================================================
+version: '3.8'
+
+services:
+  mcp-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: build           # 빌드 스테이지에서 중단
+    container_name: mcp-server-dev
+    stdin_open: true
+    tty: false
+    volumes:
+      - ../src:/src           # 소스 코드 마운트
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./tools:/app/tools:ro
+      - ./docs:/app/docs:ro
+      - ./prompts:/app/prompts:ro
+    working_dir: /src
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - Features__EnableStdio=true
+      - Features__EnableHttp=false
+      - Logging__MinLevel=Debug
+    command: ["dotnet", "run", "--project", "Micube.MCP.Server"]
+    network_mode: none
+    restart: "no"
+
+---
+# =============================================================================
+# 📁 docker/prod-compose.yml - 프로덕션용
+# =============================================================================
+version: '3.8'
+
+services:
+  mcp-server:
+    image: mcp-server:v1.0.0  # 특정 버전 사용
+    container_name: mcp-server-prod
+    stdin_open: true
+    tty: false
+    volumes:
+      - /etc/mcp-server/config:/app/config:ro
+      - /var/log/mcp-server:/app/logs
+      - /opt/mcp-server/tools:/app/tools:ro
+      - /opt/mcp-server/docs:/app/docs:ro
+      - /opt/mcp-server/prompts:/app/prompts:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Features__EnableStdio=true
+      - Features__EnableHttp=false
+      - Logging__MinLevel=Info
+      - Logging__File__RetentionDays=90
+    network_mode: none
+    mem_limit: 1g
+    cpus: 2.0
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+
+---
+# =============================================================================
+# 📁 docker-compose.yml - 통합 설정 (프로파일 사용)
+# =============================================================================
+version: '3.8'
+
+services:
+  # STDIO 서비스 (기본)
+  mcp-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    stdin_open: true
+    tty: false
+    volumes:
+      - ./docker/config:/app/config:ro
+      - ./docker/logs:/app/logs
+      - ./docker/tools:/app/tools:ro
+      - ./docker/docs:/app/docs:ro
+      - ./docker/prompts:/app/prompts:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - Features__EnableStdio=true
+      - Features__EnableHttp=false
+    profiles: ["stdio", "default"]
+    network_mode: none
+    restart: "no"
+
+  # HTTP 서비스
+  mcp-http:
+    extends: mcp-server
+    ports:
+      - "${HTTP_PORT:-5000}:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - Features__EnableStdio=false
+      - Features__EnableHttp=true
+    profiles: ["http"]
+    network_mode: bridge
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 개발 서비스
+  mcp-dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: build
+    stdin_open: true
+    tty: false
+    volumes:
+      - ./src:/src
+      - ./docker/config:/app/config:ro
+      - ./docker/logs:/app/logs
+    working_dir: /src
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - Features__EnableStdio=true
+      - Logging__MinLevel=Debug
+    command: ["dotnet", "run", "--project", "Micube.MCP.Server"]
+    profiles: ["dev"]
+    network_mode: none
+    restart: "no"
+
+---
+# =============================================================================
+# 📁 docker/multi-service-compose.yml - 다중 서비스 설정
+# =============================================================================
+version: '3.8'
+
+services:
+  # 기본 MCP 서버
+  mcp-primary:
+    image: mcp-server:latest
+    container_name: mcp-primary
+    stdin_open: true
+    tty: false
+    volumes:
+      - ./config/primary:/app/config:ro
+      - ./logs/primary:/app/logs
+      - ./tools/primary:/app/tools:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Features__EnableStdio=true
+    network_mode: none
+    restart: "no"
+
+  # 개발용 MCP 서버
+  mcp-development:
+    image: mcp-server:dev
+    container_name: mcp-dev
+    stdin_open: true
+    tty: false
+    volumes:
+      - ./config/dev:/app/config:ro
+      - ./logs/dev:/app/logs
+      - ./tools/dev:/app/tools:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Logging__MinLevel=Debug
+    network_mode: none
+    restart: "no"
+
+  # 테스트용 MCP 서버
+  mcp-testing:
+    image: mcp-server:test
+    container_name: mcp-test
+    stdin_open: true
+    tty: false
+    volumes:
+      - ./config/test:/app/config:ro
+      - ./logs/test:/app/logs
+      - ./tools/test:/app/tools:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Testing
+      - Features__EnableStdio=true
+    network_mode: none
+    restart: "no"
