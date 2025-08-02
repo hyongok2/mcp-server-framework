@@ -42,7 +42,7 @@ graph TD
 <Project Sdk="Microsoft.NET.Sdk"> // Clase Library 프로젝트로 생성합니다.  dotnet new classlib -n SampleTools(툴이름)
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework> // net8.0 이상 
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
