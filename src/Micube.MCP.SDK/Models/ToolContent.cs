@@ -6,7 +6,7 @@ namespace Micube.MCP.SDK.Models;
 public class ToolContent
 {
     [JsonProperty("type")]
-    public string Type { get; set; } = "text"; // text, image, code, structured 등
+    public string Type { get; set; } = "text"; // text, image, code 등
 
     [JsonProperty("text")]
     public string? Text { get; set; }
@@ -17,10 +17,6 @@ public class ToolContent
     [JsonProperty("mimeType")]
     public string? MimeType { get; set; }
 
-    // 새로 추가: 구조화된 출력용
-    [JsonProperty("schema")]
-    public object? Schema { get; set; }  // JSON Schema
-
     public ToolContent() { }
 
     public ToolContent(string type, string? text)
@@ -29,11 +25,4 @@ public class ToolContent
         Text = text;
     }
 
-    // 새로 추가: 구조화된 데이터 생성자
-    public ToolContent(object data, object? schema = null)
-    {
-        Type = "structured";
-        Data = data;
-        Schema = schema;
-    }
 }

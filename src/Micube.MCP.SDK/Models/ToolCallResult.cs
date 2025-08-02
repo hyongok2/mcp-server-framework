@@ -20,15 +20,6 @@ public class ToolCallResult
         };
     }
 
-    public static ToolCallResult SuccessStructured(object data, object? schema = null)
-    {
-        return new ToolCallResult
-        {
-            IsError = false,
-            Content = new List<ToolContent> { new ToolContent(data, schema) }
-        };
-    }
-
     public static ToolCallResult Fail(string message)
     {
         return new ToolCallResult
