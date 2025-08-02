@@ -33,10 +33,6 @@ public interface ICapabilitiesService
     bool IsFeatureSupported(string featureName);
 
     /// <summary>
-    /// 클라이언트가 특정 알림을 지원하는지 확인합니다
-    /// </summary>
-    bool SupportsNotification(string notificationType);
-    /// <summary>
     /// 기능 이름이 유효한지 검증합니다
     /// </summary>
     bool IsValidFeatureName(string featureName);

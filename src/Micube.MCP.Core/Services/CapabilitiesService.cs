@@ -47,7 +47,7 @@ public class CapabilitiesService : ICapabilitiesService
                 _clientInfo = clientParams.ClientInfo;
 
                 _logger.LogInfo($"[Capabilities] Client registered: {_clientInfo.Name} v{_clientInfo.Version}");
-                _logger.LogDebug($"[Capabilities] Client supports - Tools: {_clientCapabilities.Tools != null}, Resources: {_clientCapabilities.Resources != null}, Prompts: {_clientCapabilities.Prompts != null}");
+                _logger.LogDebug($"[Capabilities] Client supports - Tools: {_clientCapabilities.Tools}, Resources: {_clientCapabilities.Resources}, Prompts: {_clientCapabilities.Prompts}, Sampling: {_clientCapabilities.Sampling}, Logging: {_clientCapabilities.Logging}, Roots: {_clientCapabilities.Roots != null}");
 
                 return CapabilitiesValidationResult.Success();
             }
@@ -89,30 +89,12 @@ public class CapabilitiesService : ICapabilitiesService
 
             return featureName.ToLowerInvariant() switch
             {
-                CapabilitiesConstants.Features.Tools => _clientCapabilities.Tools != null,
-                CapabilitiesConstants.Features.Resources => _clientCapabilities.Resources != null,
-                CapabilitiesConstants.Features.Prompts => _clientCapabilities.Prompts != null,
-                CapabilitiesConstants.Features.Sampling => _clientCapabilities.Sampling != null,
-                CapabilitiesConstants.Features.Logging => _clientCapabilities.Logging != null,
-                _ => false
-            };
-        }
-    }
-
-    public bool SupportsNotification(string notificationType)
-    {
-        lock (_lock)
-        {
-            if (_clientCapabilities == null) return false;
-
-            return notificationType.ToLowerInvariant() switch
-            {
-                CapabilitiesConstants.Notifications.ToolsListChanged => _clientCapabilities.Tools?.ListChanged ?? false,
-                CapabilitiesConstants.Notifications.ResourcesListChanged => _clientCapabilities.Resources?.ListChanged ?? false,
-                CapabilitiesConstants.Notifications.ResourcesUpdated => _clientCapabilities.Resources?.Subscribe ?? false,
-                CapabilitiesConstants.Notifications.PromptsListChanged => _clientCapabilities.Prompts?.ListChanged ?? false,
-                CapabilitiesConstants.Notifications.SamplingProgress => _clientCapabilities.Sampling != null, // 향후 구현
-                CapabilitiesConstants.Notifications.LoggingLevelChanged => _clientCapabilities.Logging != null, // 향후 구현
+                CapabilitiesConstants.Features.Tools => _clientCapabilities.Tools == true,
+                CapabilitiesConstants.Features.Resources => _clientCapabilities.Resources == true,
+                CapabilitiesConstants.Features.Prompts => _clientCapabilities.Prompts == true,
+                CapabilitiesConstants.Features.Sampling => _clientCapabilities.Sampling == true,
+                CapabilitiesConstants.Features.Logging => _clientCapabilities.Logging == true,
+               CapabilitiesConstants.Features.Roots => _clientCapabilities.Roots != null ? _clientCapabilities.Roots.ListChanged == true : false, 
                 _ => false
             };
         }

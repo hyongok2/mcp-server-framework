@@ -36,16 +36,4 @@ public static class CapabilitiesExtensions
     public static bool SupportsLogging(this ICapabilitiesService capabilities)
         => capabilities.IsFeatureSupported(CapabilitiesConstants.Features.Logging);
 
-    // 알림 지원 여부 확인 메서드들
-    public static bool SupportsToolsListChanged(this ICapabilitiesService capabilities)
-        => capabilities.SupportsNotification(CapabilitiesConstants.Notifications.ToolsListChanged);
-
-    public static bool SupportsResourcesListChanged(this ICapabilitiesService capabilities)
-        => capabilities.SupportsNotification(CapabilitiesConstants.Notifications.ResourcesListChanged);
-
-    public static bool SupportsResourcesUpdated(this ICapabilitiesService capabilities)
-        => capabilities.SupportsNotification(CapabilitiesConstants.Notifications.ResourcesUpdated);
-
-    public static bool SupportsPromptsListChanged(this ICapabilitiesService capabilities)
-        => capabilities.SupportsNotification(CapabilitiesConstants.Notifications.PromptsListChanged);
 }

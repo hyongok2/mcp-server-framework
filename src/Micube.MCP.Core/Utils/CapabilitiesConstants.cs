@@ -14,6 +14,7 @@ public static class CapabilitiesConstants
         public const string Prompts = "prompts";
         public const string Sampling = "sampling";
         public const string Logging = "logging";
+        public const string Roots = "roots";
     }
 
     /// <summary>
