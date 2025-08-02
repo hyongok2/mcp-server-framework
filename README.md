@@ -15,17 +15,83 @@
 - **🔒 폐쇄망 친화적**: 화이트리스트 기반 보안 및 오프라인 운영
 - **⚡ Zero-Code 튜닝**: Description 변경을 위한 코드 수정 불필요
 
-## 📚 문서
-
-- **[아키텍처 가이드](docs/architecture.md)** - 전체 시스템 구조
-- **[개발자 가이드](docs/developer-guide.md)** - 도구 개발 상세 가이드  
-- **[배포 가이드](docs/deployment.md)** - 제조 현장 배포 방법
-- **[API 참조](docs/api-reference.md)** - MCP 프로토콜 API
-- **[예제 모음](docs/examples.md)** - 다양한 사용 사례
-
 ## ⚙️ 시스템 구조
 
 ![시스템구조](docs/image/system-architecture.png)
+
+
+## 📚 문서
+
+### **📖 학습 가이드**
+
+#### **1. 기본 개념** 🧠
+- **[MCP 개요](./docs/01-fundamental/README.md)** - MCP 프로토콜과 본 프레임워크 소개
+  - [MCP란 무엇인가?](./docs/01-fundamental/what-is-mcp.md) - 프로토콜 기본 이해
+  - [핵심 개념](./docs/01-fundamental/mcp-concepts.md) - Tools, Resources, Prompts 상세
+  - [JSON-RPC 기초](./docs/01-fundamental/json-rpc-basics.md) - 통신 프로토콜 이해
+  - [서버 프레임워크 특징](./docs/01-fundamental/server-overview.md) - 차별화된 기능들
+
+#### **2. 빠른 시작** ⚡
+- **[시작하기](./docs/02-getting-started/README.md)** - 설치부터 첫 실행까지
+  - [설치 및 빌드](./docs/02-getting-started/installation.md) - 환경 구성과 빌드
+  - [첫 실행](./docs/02-getting-started/first-run.md) - 서버 시작과 상태 확인
+  - [기본 사용법](./docs/02-getting-started/basic-usage.md) - 핵심 기능 실습
+
+#### **3. 설정 관리** ⚙️
+- **[Configuration](./docs/03-configuration/README.md)** - 서버 설정과 클라이언트 연결
+  - [서버 설정](./docs/03-configuration/server-config.md) - appsettings.json 완전 가이드
+  - [클라이언트 연결](./docs/03-configuration/client-connection.md) - MCP 클라이언트 설정 방법
+  - [연결 예제](./docs/03-configuration/connection-examples/) - 다양한 연결 시나리오
+    - [STDIO 연결](./docs/03-configuration/connection-examples/stdio-connection.md)
+    - [HTTP 연결](./docs/03-configuration/connection-examples/http-connection.md)
+    - [Docker 연결](./docs/03-configuration/connection-examples/docker-connection.md)
+    - [Claude Desktop 연동](./docs/03-configuration/connection-examples/claude-desktop.md)
+
+#### **4. 개발 가이드** 🔧
+- **[Development](./docs/04-development/README.md)** - 도구 개발과 확장
+  - [도구 개발](./docs/04-development/tool-development.md) - 커스텀 Tool Group 만들기
+  - [리소스 관리](./docs/04-development/resource-management.md) - Resource 설정과 최적화
+  - [프롬프트 템플릿](./docs/04-development/prompt-templates.md) - 전문 Prompt 작성법
+  - [SDK 참조](./docs/04-development/sdk-reference.md) - 개발 SDK 완전 가이드
+  - [모범 사례](./docs/04-development/best-practices.md) - 개발 베스트 프랙티스
+
+#### **5. 배포 및 운영** 🚀
+- **[Deployment](./docs/05-deployment/README.md)** - 실제 환경 배포와 운영
+  - [프로덕션 설정](./docs/05-deployment/production-setup.md) - 운영 환경 최적화
+  - [Docker 배포](./docs/05-deployment/docker-deployment.md) - 컨테이너 기반 배포
+  - [모니터링](./docs/05-deployment/monitoring.md) - 로깅과 헬스체크
+
+### **📋 참조 자료**
+
+#### **6. 시스템 구조** 🏗️
+- **[Architecture](./docs/06-architecture/README.md)** - 프레임워크 내부 구조
+  - [시스템 개요](./docs/06-architecture/system-overview.md) - 전체 아키텍처
+  - [플러그인 구조](./docs/06-architecture/plugin-architecture.md) - 확장 메커니즘
+  - [메시지 흐름](./docs/06-architecture/message-flow.md) - 요청 처리 과정
+
+#### **7. API 참조** 📖
+- **[API Reference](./docs/07-api/README.md)** - 완전한 API 문서
+  - [MCP 메서드](./docs/07-api/mcp-methods.md) - 지원 메서드 목록
+  - [HTTP 엔드포인트](./docs/07-api/endpoints.md) - REST API 명세
+  - [에러 코드](./docs/07-api/error-codes.md) - 에러 코드 참조
+
+#### **8. 예제 모음** 💡
+- **[Examples](./docs/08-examples/README.md)** - 실전 예제와 튜토리얼
+  - [기본 도구 예제](./docs/08-examples/basic-tools.md) - 간단한 도구 구현
+  - [고급 시나리오](./docs/08-examples/advanced-scenarios.md) - 복합 워크플로우
+  - [통합 예제](./docs/08-examples/integration-examples/) - 실제 사용 사례
+    - [제조업 IoT 연동](./docs/08-examples/integration-examples/manufacturing-iot.md)
+    - [개발 도구 통합](./docs/08-examples/integration-examples/dev-tools.md)
+    - [문서 관리 시스템](./docs/08-examples/integration-examples/document-system.md)
+
+### **🛠️ 지원 및 문제 해결**
+
+#### **9. 문제 해결** 🔍
+- **[Troubleshooting](./docs/09-troubleshooting/README.md)** - 문제 진단과 해결
+  - [일반적인 문제](./docs/09-troubleshooting/common-issues.md) - 자주 발생하는 문제들
+  - [디버깅 가이드](./docs/09-troubleshooting/debugging.md) - 효과적인 디버깅 방법
+  - [FAQ](./docs/09-troubleshooting/faq.md) - 자주 묻는 질문
+
 
 ## 📄 라이선스
 
