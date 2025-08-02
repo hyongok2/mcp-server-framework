@@ -62,20 +62,9 @@
 
 #### **6. 시스템 구조** 🏗️
 - **[Architecture](./docs/06-architecture/README.md)** - 프레임워크 내부 구조
-  - [시스템 개요](./docs/06-architecture/system-overview.md) - 전체 아키텍처
-  - [플러그인 구조](./docs/06-architecture/plugin-architecture.md) - 확장 메커니즘
-  - [메시지 흐름](./docs/06-architecture/message-flow.md) - 요청 처리 과정
 
 #### **7. API 참조** 📖
 - **[API Reference](./docs/07-api/README.md)** - 완전한 API 문서
-  - [MCP 메서드](./docs/07-api/mcp-methods.md) - 지원 메서드 목록
-  - [HTTP 엔드포인트](./docs/07-api/endpoints.md) - REST API 명세
-  - [에러 코드](./docs/07-api/error-codes.md) - 에러 코드 참조
-
-### **🛠️ 지원 및 문제 해결**
-
-#### **8. 문제 해결** 🔍
-- **[Troubleshooting](./docs/09-troubleshooting/README.md)** - 문제 진단과 해결
 
 
 
