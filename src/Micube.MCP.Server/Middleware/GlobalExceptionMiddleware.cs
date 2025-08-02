@@ -1,5 +1,7 @@
 using System;
 using System.Text.Json;
+using Micube.MCP.Core.Utils;
+using Micube.MCP.SDK.Exceptions;
 using Micube.MCP.SDK.Interfaces;
 
 namespace Micube.MCP.Server.Middleware;
@@ -37,13 +39,13 @@ public class GlobalExceptionMiddleware
         {
             error = new
             {
-                code = -32603, // JSON-RPC Internal Error
+                code = McpErrorCodes.INTERNAL_ERROR, // JSON-RPC Internal Error
                 message = "Internal server error",
                 data = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" 
                     ? exception.ToString() 
                     : "An unexpected error occurred"
             },
-            jsonrpc = "2.0",
+            jsonrpc = JsonRpcConstants.Version,
             id = context.Items["RequestId"] ?? null
         };
 
