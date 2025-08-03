@@ -5,6 +5,7 @@ namespace Micube.MCP.Core.Utils;
 public static class ResourceConstants
 {
     public const string FileUriScheme = "file://";
+     public const char UriPathSeparator = '/'; 
     
     public static class MimeTypes
     {

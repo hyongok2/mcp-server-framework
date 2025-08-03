@@ -45,19 +45,20 @@ public class ResourceService : IResourceService
     {
         try
         {
-            var fileName = uri.StartsWith(ResourceConstants.FileUriScheme)
+            var relativePath = uri.StartsWith(ResourceConstants.FileUriScheme)
                 ? uri.Substring(ResourceConstants.FileUriScheme.Length)
                 : uri;
-            var filePath = Path.Combine(_docsPath, fileName);
+
+            var filePath = Path.Combine(_docsPath, relativePath.Replace(ResourceConstants.UriPathSeparator, Path.DirectorySeparatorChar));
 
             if (!File.Exists(filePath))
             {
-                _logger.LogError($"Resource not found: {uri}", uri);
+                _logger.LogError($"Resource not found: {uri}");
                 return null;
             }
 
             var content = await File.ReadAllTextAsync(filePath);
-            var mimeType = GetMimeType(Path.GetExtension(fileName));
+            var mimeType = GetMimeType(Path.GetExtension(filePath));
 
             return new McpResourceContent
             {
@@ -85,7 +86,7 @@ public class ResourceService : IResourceService
 
             if (Directory.Exists(_docsPath))
             {
-                var files = Directory.GetFiles(_docsPath, "*.*", SearchOption.TopDirectoryOnly)
+                var files = Directory.GetFiles(_docsPath, "*.*", SearchOption.AllDirectories)
                     .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
                     .Where(f => !Path.GetFileName(f).StartsWith("."))
                     .ToList();
@@ -93,13 +94,15 @@ public class ResourceService : IResourceService
                 foreach (var filePath in files)
                 {
                     var fileName = Path.GetFileName(filePath);
+                    var relativePath = Path.GetRelativePath(_docsPath, filePath);
+                    var normalizedPath = relativePath.Replace(Path.DirectorySeparatorChar, ResourceConstants.UriPathSeparator); // URI용 정규화
                     var fileInfo = new FileInfo(filePath);
 
                     resources.Add(new McpResource
                     {
-                        Uri = $"{ResourceConstants.FileUriScheme}{fileName}",
-                        Name = fileName,
-                        Description = GetFileDescription(fileName),
+                        Uri = $"{ResourceConstants.FileUriScheme}{normalizedPath}",
+                        Name = normalizedPath, // 또는 fileName - 어느 쪽이 더 나을까요?
+                        Description = GetFileDescription(normalizedPath),
                         MimeType = GetMimeType(Path.GetExtension(fileName)),
                         Size = fileInfo.Length
                     });
@@ -139,15 +142,22 @@ public class ResourceService : IResourceService
         }
     }
 
-    private string GetFileDescription(string fileName)
+    private string GetFileDescription(string normalizedPath)
     {
-        // 1. 메타데이터에서 찾기
-        if (_metadata?.TryGetValue(fileName, out var description) == true)
+        // 1. 상대 경로로 메타데이터에서 찾기
+        if (_metadata?.TryGetValue(normalizedPath, out var description) == true)
         {
             return description;
         }
 
-        // 2. 파일명 기반 기본값
+        // 2. 파일명만으로도 시도 (슬래시 기준으로 마지막 부분 추출)
+        var fileName = normalizedPath.Split(ResourceConstants.UriPathSeparator).Last();
+        if (_metadata?.TryGetValue(fileName, out description) == true)
+        {
+            return description;
+        }
+
+        // 3. 기본값
         return Path.GetFileNameWithoutExtension(fileName);
     }
 

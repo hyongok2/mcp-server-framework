@@ -1,0 +1,41 @@
+모든 관련 DLL 같이 포함해야 함. 여기에는 Git 용량 문제로 포함하지 않음.
+
+관련된 모든 DLL 파일 종속에 상위 종속까지 모두 반영되어야 함.
+
+CopyLocalLockFileAssemblies 이 옵션을 반드시 추가해 줘야 모든 종속성이 출력 디렉토리에 같이 복사 됨.
+
+또한 툴그룹을 설계하는 경우에는 별도의 설정 파일(오라클은 .ora 같은)이 같은 경로에서 처리될 수 있도록 개발해야 함. 
+이 부분의 코드는 아래 참고.
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Micube.MCP.SDK\Micube.MCP.SDK.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.9.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+</Project>
+
+
+
+    public OracleDbToolGroup(IMcpLogger logger) : base(logger)
+    {
+        // OracleConfiguration.TnsAdmin 설정
+        // TNS_ADMIN 경로는 DLL이 위치한 디렉토리로 설정 - 이렇게 해야 같은 경로의 tnsnames.ora 파일을 사용할 수 있습니다.
+        var dllDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        OracleConfiguration.TnsAdmin = dllDirectory;
+        Logger.LogInfo("[OracleTools] Configuration initialized with TNS_ADMIN: " + OracleConfiguration.TnsAdmin);
+    }

@@ -23,7 +23,7 @@ public class ToolGroupLoader
         }
 
         var dllPaths = Directory
-            .EnumerateFiles(directory, "*.dll", SearchOption.TopDirectoryOnly)
+            .EnumerateFiles(directory, "*.dll", SearchOption.AllDirectories)
             .Where(p => whitelistDlls == null || whitelistDlls.Contains(Path.GetFileName(p)))
             .ToList();
 
