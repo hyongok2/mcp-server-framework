@@ -22,7 +22,7 @@ public static class ConfigurationValidator
         IMcpLogger logger)
     {
         logger.LogInfo("Starting configuration validation...");
-        
+
         var validationErrors = new List<string>();
 
         // 1. 기본 기능 설정 검증
@@ -61,10 +61,10 @@ public static class ConfigurationValidator
 
     private static void ValidateAndCreateDirectories(
         ToolGroupOptions toolGroupOptions,
-        ResourceOptions resourceOptions, 
+        ResourceOptions resourceOptions,
         PromptOptions promptOptions,
         LogOptions logOptions,
-        List<string> errors, 
+        List<string> errors,
         IMcpLogger logger)
     {
         var directories = new Dictionary<string, string>
@@ -98,18 +98,27 @@ public static class ConfigurationValidator
 
     private static void ValidateToolWhitelist(ToolGroupOptions toolGroupOptions, List<string> errors, IMcpLogger logger)
     {
-        if (toolGroupOptions.Whitelist?.Any() == true)
+        if (toolGroupOptions.Whitelist == null || toolGroupOptions.Whitelist.Count == 0)
         {
-            var toolsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, toolGroupOptions.Directory));
-            var missingDlls = toolGroupOptions.Whitelist
-                .Where(dll => !File.Exists(Path.Combine(toolsPath, dll)))
-                .ToList();
+            logger.LogError("Tool whitelist is not configured. No DLLs will be checked.");
+            return;
+        }
 
-            if (missingDlls.Any())
-            {
-                logger.LogError($"Warning: Some whitelisted tool DLLs not found: {string.Join(", ", missingDlls)}");
-                // Warning이지 에러는 아님 - 나중에 추가될 수 있음
-            }
+        var toolsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, toolGroupOptions.Directory));
+
+        // toolsPath 하위 모든 경로에서 dll 이름이 일치하는지 검사
+        var allDllFiles = Directory.GetFiles(toolsPath, "*.dll", SearchOption.AllDirectories)
+                                   .Select(Path.GetFileName)
+                                   .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // 존재하지 않는 dll 목록 추출
+        var missingDlls = toolGroupOptions.Whitelist
+            .Where(dll => !allDllFiles.Contains(dll))
+            .ToList();
+
+        if (missingDlls.Count > 0)
+        {
+            logger.LogError($"Warning: Some whitelisted tool DLLs not found: {string.Join(", ", missingDlls)}");
         }
     }
 
