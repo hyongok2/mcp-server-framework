@@ -26,23 +26,23 @@ public class CapabilitiesService : ICapabilitiesService
         {
             try
             {
-                // 1. 프로토콜 버전 검증
-                if (!IsProtocolVersionSupported(clientParams.ProtocolVersion))
-                {
-                    var error = $"Unsupported protocol version: {clientParams.ProtocolVersion}. Expected: {JsonRpcConstants.ProtocolVersion}";
-                    _logger.LogError($"[Capabilities] {error}");
-                    return CapabilitiesValidationResult.Error(error);
-                }
+                // 1. 프로토콜 버전 검증 (유연한 호환성을 위하여 적용하지 않도록 함.)
+                // if (!IsProtocolVersionSupported(clientParams.ProtocolVersion))
+                // {
+                //     var error = $"Unsupported protocol version: {clientParams.ProtocolVersion}. Expected: {JsonRpcConstants.ProtocolVersion}";
+                //     _logger.LogError($"[Capabilities] {error}");
+                //     return CapabilitiesValidationResult.Error(error);
+                // }
 
-                // 2. 클라이언트 정보 검증
-                if (string.IsNullOrEmpty(clientParams.ClientInfo.Name))
-                {
-                    var error = "Client name is required";
-                    _logger.LogError($"[Capabilities] {error}");
-                    return CapabilitiesValidationResult.Error(error);
-                }
+                // 2. 클라이언트 정보 검증 (유연한 호환성을 위하여 적용하지 않도록 함.)
+                // if (string.IsNullOrEmpty(clientParams.ClientInfo.Name))
+                // {
+                //     var error = "Client name is required";
+                //     _logger.LogError($"[Capabilities] {error}");
+                //     return CapabilitiesValidationResult.Error(error);
+                // }
 
-                // 3. Capabilities 저장
+                // 3. Capabilities 저장 (저장 및 로깅만 수행)
                 _clientCapabilities = clientParams.Capabilities ?? new ClientCapabilities();
                 _clientInfo = clientParams.ClientInfo;
 

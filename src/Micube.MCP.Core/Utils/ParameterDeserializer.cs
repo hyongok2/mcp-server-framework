@@ -28,7 +28,7 @@ public static class ParameterDeserializer
                 Newtonsoft.Json.Linq.JToken jToken => jToken.ToObject<T>(),
                 
                 // JsonElement (System.Text.Json)
-                JsonElement jsonElement => System.Text.Json.JsonSerializer.Deserialize<T>(jsonElement.GetRawText()),
+                JsonElement jsonElement => JsonConvert.DeserializeObject<T>(jsonElement.GetRawText()),
                 
                 // Dictionary<string, object> - 일반적인 경우
                 Dictionary<string, object> dict => JsonConvert.DeserializeObject<T>(

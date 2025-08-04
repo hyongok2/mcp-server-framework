@@ -46,8 +46,11 @@ public class InitializeHandler : IMethodHandler
                 catch (JsonException ex)
                 {
                     _logger.LogError($"[Initialize] Failed to parse client parameters: {ex.Message}");
-                    return ErrorResponseFactory.Create(message.Id, McpErrorCodes.INVALID_PARAMS, 
-                        "Invalid initialization parameters", ex.Message);
+                    clientParams = null;
+                    // 클라이언트 파라미터가 잘못된 경우에도 정상 처리한다. 유연한 호환성을 위하여.
+                    // 입력 받은 메세지를 로그를 확인하여 클라이언트 쪽에 문제를 알리도록 한다.
+                    // return ErrorResponseFactory.Create(message.Id, McpErrorCodes.INVALID_PARAMS,
+                    //     "Invalid initialization parameters", ex.Message);
                 }
             }
 
