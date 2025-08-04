@@ -41,7 +41,7 @@ public class InitializeHandler : IMethodHandler
             {
                 try
                 {
-                    clientParams = JsonConvert.DeserializeObject<ClientInitializeParams>(message.Params.ToString() ?? "{}");
+                    clientParams = ParameterDeserializer.DeserializeParams<ClientInitializeParams>(message.Params);
                 }
                 catch (JsonException ex)
                 {
