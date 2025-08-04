@@ -1,0 +1,64 @@
+# Micube.MCP.Server.Framework.Tests.sln
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "..\src", "{A1234567-B890-12CD-34EF-567890123456}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B2345678-C901-23DE-45FA-678901234567}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micube.MCP.Server", "..\src\Micube.MCP.Server\Micube.MCP.Server.csproj", "{7CB52743-B4D1-4A56-A8CE-E827340D8B3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micube.MCP.Core", "..\src\Micube.MCP.Core\Micube.MCP.Core.csproj", "{0029F61D-D0F6-4C66-AFCE-C8C789B951AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micube.MCP.SDK", "..\src\Micube.MCP.SDK\Micube.MCP.SDK.csproj", "{0D9E97FF-C2C1-4A45-B706-360DD2CEA9C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micube.MCP.Core.Tests", "Micube.MCP.Core.Tests\Micube.MCP.Core.Tests.csproj", "{C3456789-D012-34EF-56GA-789012345678}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micube.MCP.SDK.Tests", "Micube.MCP.SDK.Tests\Micube.MCP.SDK.Tests.csproj", "{D4567890-E123-45FA-67HB-890123456789}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Micube.MCP.Server.Tests", "Micube.MCP.Server.Tests\Micube.MCP.Server.Tests.csproj", "{E5678901-F234-56GB-78IC-901234567890}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7CB52743-B4D1-4A56-A8CE-E827340D8B3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CB52743-B4D1-4A56-A8CE-E827340D8B3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CB52743-B4D1-4A56-A8CE-E827340D8B3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CB52743-B4D1-4A56-A8CE-E827340D8B3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0029F61D-D0F6-4C66-AFCE-C8C789B951AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0029F61D-D0F6-4C66-AFCE-C8C789B951AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0029F61D-D0F6-4C66-AFCE-C8C789B951AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0029F61D-D0F6-4C66-AFCE-C8C789B951AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D9E97FF-C2C1-4A45-B706-360DD2CEA9C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D9E97FF-C2C1-4A45-B706-360DD2CEA9C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D9E97FF-C2C1-4A45-B706-360DD2CEA9C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D9E97FF-C2C1-4A45-B706-360DD2CEA9C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3456789-D012-34EF-56GA-789012345678}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3456789-D012-34EF-56GA-789012345678}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3456789-D012-34EF-56GA-789012345678}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3456789-D012-34EF-56GA-789012345678}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4567890-E123-45FA-67HB-890123456789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4567890-E123-45FA-67HB-890123456789}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4567890-E123-45FA-67HB-890123456789}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4567890-E123-45FA-67HB-890123456789}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5678901-F234-56GB-78IC-901234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5678901-F234-56GB-78IC-901234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5678901-F234-56GB-78IC-901234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5678901-F234-56GB-78IC-901234567890}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7CB52743-B4D1-4A56-A8CE-E827340D8B3B} = {A1234567-B890-12CD-34EF-567890123456}
+		{0029F61D-D0F6-4C66-AFCE-C8C789B951AE} = {A1234567-B890-12CD-34EF-567890123456}
+		{0D9E97FF-C2C1-4A45-B706-360DD2CEA9C4} = {A1234567-B890-12CD-34EF-567890123456}
+		{C3456789-D012-34EF-56GA-789012345678} = {B2345678-C901-23DE-45FA-678901234567}
+		{D4567890-E123-45FA-67HB-890123456789} = {B2345678-C901-23DE-45FA-678901234567}
+		{E5678901-F234-56GB-78IC-901234567890} = {B2345678-C901-23DE-45FA-678901234567}
+	EndGlobalSection
+EndGlobal
