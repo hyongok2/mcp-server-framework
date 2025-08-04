@@ -119,3 +119,5 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<IMcpMessageDispatcher, McpMessageDispatcher>();
 
 }
+
+public partial class Program { }
