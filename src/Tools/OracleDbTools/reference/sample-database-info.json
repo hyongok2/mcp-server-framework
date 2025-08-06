@@ -1,0 +1,256 @@
+{
+  "database_schema": "EMS_EQUIPMENT_MANAGEMENT_SYSTEM",
+  "tables": [
+    {
+      "table_name": "EB_EQUIPMENT",
+      "description": "설비 마스터 정보 테이블",
+      "primary_key": "EQUIPMENT_ID",
+      "unique_keys": ["SERIAL_NUMBER"],
+      "columns": [
+        {"name": "EQUIPMENT_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "설비 고유 ID"},
+        {"name": "EQUIPMENT_NAME", "type": "VARCHAR2(200)", "nullable": false, "description": "설비명"},
+        {"name": "EQUIPMENT_TYPE", "type": "VARCHAR2(100)", "nullable": true, "description": "설비 유형"},
+        {"name": "MANUFACTURER", "type": "VARCHAR2(200)", "nullable": true, "description": "제조사"},
+        {"name": "MODEL_NUMBER", "type": "VARCHAR2(100)", "nullable": true, "description": "모델 번호"},
+        {"name": "SERIAL_NUMBER", "type": "VARCHAR2(100)", "nullable": true, "description": "시리얼 번호"},
+        {"name": "PURCHASE_DATE", "type": "DATE", "nullable": true, "description": "구매일자"},
+        {"name": "INSTALL_DATE", "type": "DATE", "nullable": true, "description": "설치일자"},
+        {"name": "WARRANTY_END_DATE", "type": "DATE", "nullable": true, "description": "보증 만료일"},
+        {"name": "LOCATION_CODE", "type": "VARCHAR2(50)", "nullable": true, "description": "위치 코드"},
+        {"name": "DEPARTMENT", "type": "VARCHAR2(100)", "nullable": true, "description": "관리 부서"},
+        {"name": "STATUS", "type": "VARCHAR2(50)", "nullable": true, "description": "상태 (ACTIVE/INACTIVE/STANDBY)"},
+        {"name": "CRITICALITY_LEVEL", "type": "VARCHAR2(20)", "nullable": true, "description": "중요도 (CRITICAL/HIGH/MEDIUM/LOW)"},
+        {"name": "ASSET_VALUE", "type": "NUMBER(15,2)", "nullable": true, "description": "자산 가치"},
+        {"name": "OPERATING_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "총 가동 시간"},
+        {"name": "DESCRIPTION", "type": "VARCHAR2(1000)", "nullable": true, "description": "설비 설명"},
+        {"name": "CREATED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "생성자"},
+        {"name": "CREATED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "생성일시"},
+        {"name": "MODIFIED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "수정자"},
+        {"name": "MODIFIED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "수정일시"}
+      ]
+    },
+    {
+      "table_name": "EB_MAINTENANCE_HISTORY",
+      "description": "유지보수 이력 테이블",
+      "primary_key": "MAINTENANCE_ID",
+      "foreign_keys": [{"column": "EQUIPMENT_ID", "references": "EB_EQUIPMENT(EQUIPMENT_ID)"}],
+      "columns": [
+        {"name": "MAINTENANCE_ID", "type": "NUMBER", "nullable": false, "description": "유지보수 ID (자동생성)"},
+        {"name": "EQUIPMENT_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "설비 ID"},
+        {"name": "MAINTENANCE_TYPE", "type": "VARCHAR2(50)", "nullable": false, "description": "유지보수 유형 (PREVENTIVE/CORRECTIVE/PREDICTIVE/EMERGENCY)"},
+        {"name": "MAINTENANCE_DATE", "type": "TIMESTAMP", "nullable": true, "description": "유지보수 실행일시"},
+        {"name": "SCHEDULED_DATE", "type": "DATE", "nullable": true, "description": "예정일자"},
+        {"name": "TECHNICIAN_ID", "type": "VARCHAR2(50)", "nullable": true, "description": "작업자 ID"},
+        {"name": "TECHNICIAN_NAME", "type": "VARCHAR2(100)", "nullable": true, "description": "작업자명"},
+        {"name": "WORK_ORDER_NO", "type": "VARCHAR2(50)", "nullable": true, "description": "작업지시 번호"},
+        {"name": "MAINTENANCE_DURATION", "type": "NUMBER(10,2)", "nullable": true, "description": "작업 소요시간(시간)"},
+        {"name": "COST", "type": "NUMBER(15,2)", "nullable": true, "description": "유지보수 비용"},
+        {"name": "PARTS_REPLACED", "type": "VARCHAR2(1000)", "nullable": true, "description": "교체 부품 목록"},
+        {"name": "PROBLEM_DESCRIPTION", "type": "VARCHAR2(2000)", "nullable": true, "description": "문제 설명"},
+        {"name": "ACTION_TAKEN", "type": "VARCHAR2(2000)", "nullable": true, "description": "수행 작업"},
+        {"name": "RESULT", "type": "VARCHAR2(50)", "nullable": true, "description": "결과 (COMPLETED/PARTIAL/FAILED)"},
+        {"name": "NEXT_MAINTENANCE_DATE", "type": "DATE", "nullable": true, "description": "다음 유지보수 예정일"},
+        {"name": "DOWNTIME_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "설비 정지시간"},
+        {"name": "CREATED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "생성자"},
+        {"name": "CREATED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "생성일시"}
+      ]
+    },
+    {
+      "table_name": "EB_ALARMS_EVENTS",
+      "description": "알람 및 이벤트 테이블",
+      "primary_key": "ALARM_ID",
+      "foreign_keys": [{"column": "EQUIPMENT_ID", "references": "EB_EQUIPMENT(EQUIPMENT_ID)"}],
+      "columns": [
+        {"name": "ALARM_ID", "type": "NUMBER", "nullable": false, "description": "알람 ID (자동생성)"},
+        {"name": "EQUIPMENT_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "설비 ID"},
+        {"name": "ALARM_TYPE", "type": "VARCHAR2(50)", "nullable": true, "description": "알람 유형 (TEMPERATURE/VIBRATION/PRESSURE/FLOW/POWER)"},
+        {"name": "ALARM_LEVEL", "type": "VARCHAR2(20)", "nullable": false, "description": "알람 레벨 (CRITICAL/WARNING/INFO)"},
+        {"name": "ALARM_CODE", "type": "VARCHAR2(50)", "nullable": true, "description": "알람 코드"},
+        {"name": "ALARM_MESSAGE", "type": "VARCHAR2(500)", "nullable": true, "description": "알람 메시지"},
+        {"name": "OCCURRENCE_TIME", "type": "TIMESTAMP", "nullable": true, "description": "발생 시간"},
+        {"name": "ACKNOWLEDGED_TIME", "type": "TIMESTAMP", "nullable": true, "description": "확인 시간"},
+        {"name": "ACKNOWLEDGED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "확인자"},
+        {"name": "RESOLVED_TIME", "type": "TIMESTAMP", "nullable": true, "description": "해결 시간"},
+        {"name": "RESOLVED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "해결자"},
+        {"name": "RESOLUTION_NOTES", "type": "VARCHAR2(1000)", "nullable": true, "description": "해결 내용"},
+        {"name": "SENSOR_ID", "type": "VARCHAR2(50)", "nullable": true, "description": "센서 ID"},
+        {"name": "SENSOR_VALUE", "type": "NUMBER(20,4)", "nullable": true, "description": "센서 측정값"},
+        {"name": "THRESHOLD_VALUE", "type": "NUMBER(20,4)", "nullable": true, "description": "임계값"},
+        {"name": "STATUS", "type": "VARCHAR2(50)", "nullable": true, "description": "상태 (ACTIVE/ACKNOWLEDGED/RESOLVED)"},
+        {"name": "EMAIL_SENT", "type": "VARCHAR2(1)", "nullable": true, "description": "이메일 발송 여부 (Y/N)"},
+        {"name": "SMS_SENT", "type": "VARCHAR2(1)", "nullable": true, "description": "SMS 발송 여부 (Y/N)"},
+        {"name": "CREATED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "생성일시"}
+      ]
+    },
+    {
+      "table_name": "EB_SENSOR_DATA",
+      "description": "센서 실시간 데이터 테이블",
+      "primary_key": "DATA_ID",
+      "foreign_keys": [{"column": "EQUIPMENT_ID", "references": "EB_EQUIPMENT(EQUIPMENT_ID)"}],
+      "columns": [
+        {"name": "DATA_ID", "type": "NUMBER", "nullable": false, "description": "데이터 ID (자동생성)"},
+        {"name": "EQUIPMENT_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "설비 ID"},
+        {"name": "SENSOR_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "센서 ID"},
+        {"name": "SENSOR_TYPE", "type": "VARCHAR2(50)", "nullable": true, "description": "센서 유형"},
+        {"name": "PARAMETER_NAME", "type": "VARCHAR2(100)", "nullable": true, "description": "측정 파라미터명"},
+        {"name": "PARAMETER_VALUE", "type": "NUMBER(20,4)", "nullable": true, "description": "측정값"},
+        {"name": "UNIT", "type": "VARCHAR2(20)", "nullable": true, "description": "단위"},
+        {"name": "MIN_THRESHOLD", "type": "NUMBER(20,4)", "nullable": true, "description": "최소 임계값"},
+        {"name": "MAX_THRESHOLD", "type": "NUMBER(20,4)", "nullable": true, "description": "최대 임계값"},
+        {"name": "QUALITY_CODE", "type": "VARCHAR2(10)", "nullable": true, "description": "데이터 품질 코드 (GOOD/WARNING/BAD)"},
+        {"name": "COLLECTION_TIME", "type": "TIMESTAMP", "nullable": true, "description": "수집 시간"},
+        {"name": "IS_ANOMALY", "type": "VARCHAR2(1)", "nullable": true, "description": "이상치 여부 (Y/N)"},
+        {"name": "ANOMALY_SCORE", "type": "NUMBER(5,2)", "nullable": true, "description": "이상치 점수 (0-100)"},
+        {"name": "RAW_DATA", "type": "VARCHAR2(1000)", "nullable": true, "description": "원시 데이터"},
+        {"name": "PROCESSED_FLAG", "type": "VARCHAR2(1)", "nullable": true, "description": "처리 플래그 (Y/N)"},
+        {"name": "CREATED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "생성일시"}
+      ]
+    },
+    {
+      "table_name": "EB_WORK_ORDERS",
+      "description": "작업 지시서 테이블",
+      "primary_key": "WORK_ORDER_ID",
+      "foreign_keys": [{"column": "EQUIPMENT_ID", "references": "EB_EQUIPMENT(EQUIPMENT_ID)"}],
+      "columns": [
+        {"name": "WORK_ORDER_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "작업지시 ID"},
+        {"name": "EQUIPMENT_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "설비 ID"},
+        {"name": "ORDER_TYPE", "type": "VARCHAR2(50)", "nullable": true, "description": "작업 유형 (PREVENTIVE/CORRECTIVE/PREDICTIVE/EMERGENCY)"},
+        {"name": "PRIORITY", "type": "VARCHAR2(20)", "nullable": true, "description": "우선순위 (CRITICAL/HIGH/MEDIUM/LOW)"},
+        {"name": "STATUS", "type": "VARCHAR2(50)", "nullable": true, "description": "상태 (PENDING/SCHEDULED/IN_PROGRESS/COMPLETED/CANCELLED)"},
+        {"name": "REQUESTED_BY", "type": "VARCHAR2(100)", "nullable": true, "description": "요청자"},
+        {"name": "REQUESTED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "요청일시"},
+        {"name": "ASSIGNED_TO", "type": "VARCHAR2(100)", "nullable": true, "description": "담당자"},
+        {"name": "ASSIGNED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "할당일시"},
+        {"name": "SCHEDULED_START", "type": "TIMESTAMP", "nullable": true, "description": "예정 시작시간"},
+        {"name": "SCHEDULED_END", "type": "TIMESTAMP", "nullable": true, "description": "예정 종료시간"},
+        {"name": "ACTUAL_START", "type": "TIMESTAMP", "nullable": true, "description": "실제 시작시간"},
+        {"name": "ACTUAL_END", "type": "TIMESTAMP", "nullable": true, "description": "실제 종료시간"},
+        {"name": "ESTIMATED_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "예상 작업시간"},
+        {"name": "ACTUAL_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "실제 작업시간"},
+        {"name": "ESTIMATED_COST", "type": "NUMBER(15,2)", "nullable": true, "description": "예상 비용"},
+        {"name": "ACTUAL_COST", "type": "NUMBER(15,2)", "nullable": true, "description": "실제 비용"},
+        {"name": "WORK_DESCRIPTION", "type": "VARCHAR2(2000)", "nullable": true, "description": "작업 설명"},
+        {"name": "SAFETY_PROCEDURES", "type": "VARCHAR2(1000)", "nullable": true, "description": "안전 절차"},
+        {"name": "REQUIRED_TOOLS", "type": "VARCHAR2(1000)", "nullable": true, "description": "필요 도구"},
+        {"name": "REQUIRED_PARTS", "type": "VARCHAR2(1000)", "nullable": true, "description": "필요 부품"},
+        {"name": "COMPLETION_NOTES", "type": "VARCHAR2(2000)", "nullable": true, "description": "완료 내역"},
+        {"name": "APPROVAL_STATUS", "type": "VARCHAR2(50)", "nullable": true, "description": "승인 상태"},
+        {"name": "APPROVED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "승인자"},
+        {"name": "APPROVED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "승인일시"},
+        {"name": "CREATED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "생성자"},
+        {"name": "CREATED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "생성일시"},
+        {"name": "MODIFIED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "수정자"},
+        {"name": "MODIFIED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "수정일시"}
+      ]
+    },
+    {
+      "table_name": "EB_SPARE_PARTS",
+      "description": "예비 부품 재고 테이블",
+      "primary_key": "PART_ID",
+      "columns": [
+        {"name": "PART_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "부품 ID"},
+        {"name": "PART_NAME", "type": "VARCHAR2(200)", "nullable": false, "description": "부품명"},
+        {"name": "PART_NUMBER", "type": "VARCHAR2(100)", "nullable": true, "description": "부품 번호"},
+        {"name": "CATEGORY", "type": "VARCHAR2(100)", "nullable": true, "description": "카테고리 (BEARING/SEAL/FILTER/MOTOR/BELT/OIL/REFRIGERANT)"},
+        {"name": "MANUFACTURER", "type": "VARCHAR2(200)", "nullable": true, "description": "제조사"},
+        {"name": "SUPPLIER", "type": "VARCHAR2(200)", "nullable": true, "description": "공급업체"},
+        {"name": "UNIT_PRICE", "type": "NUMBER(15,2)", "nullable": true, "description": "단가"},
+        {"name": "QUANTITY_ON_HAND", "type": "NUMBER(10)", "nullable": true, "description": "현재 재고"},
+        {"name": "MINIMUM_STOCK", "type": "NUMBER(10)", "nullable": true, "description": "최소 재고"},
+        {"name": "MAXIMUM_STOCK", "type": "NUMBER(10)", "nullable": true, "description": "최대 재고"},
+        {"name": "REORDER_POINT", "type": "NUMBER(10)", "nullable": true, "description": "재주문점"},
+        {"name": "REORDER_QUANTITY", "type": "NUMBER(10)", "nullable": true, "description": "재주문 수량"},
+        {"name": "LOCATION", "type": "VARCHAR2(100)", "nullable": true, "description": "보관 위치"},
+        {"name": "LAST_PURCHASE_DATE", "type": "DATE", "nullable": true, "description": "최종 구매일"},
+        {"name": "LAST_USED_DATE", "type": "DATE", "nullable": true, "description": "최종 사용일"},
+        {"name": "COMPATIBLE_EQUIPMENT", "type": "VARCHAR2(1000)", "nullable": true, "description": "호환 설비"},
+        {"name": "SPECIFICATIONS", "type": "VARCHAR2(2000)", "nullable": true, "description": "사양"},
+        {"name": "STATUS", "type": "VARCHAR2(50)", "nullable": true, "description": "상태 (ACTIVE/INACTIVE)"},
+        {"name": "CREATED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "생성자"},
+        {"name": "CREATED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "생성일시"},
+        {"name": "MODIFIED_BY", "type": "VARCHAR2(50)", "nullable": true, "description": "수정자"},
+        {"name": "MODIFIED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "수정일시"}
+      ]
+    },
+    {
+      "table_name": "EB_PERFORMANCE_KPI",
+      "description": "설비 성능 KPI 테이블",
+      "primary_key": "KPI_ID",
+      "foreign_keys": [{"column": "EQUIPMENT_ID", "references": "EB_EQUIPMENT(EQUIPMENT_ID)"}],
+      "columns": [
+        {"name": "KPI_ID", "type": "NUMBER", "nullable": false, "description": "KPI ID (자동생성)"},
+        {"name": "EQUIPMENT_ID", "type": "VARCHAR2(50)", "nullable": false, "description": "설비 ID"},
+        {"name": "KPI_DATE", "type": "DATE", "nullable": false, "description": "KPI 날짜"},
+        {"name": "AVAILABILITY_RATE", "type": "NUMBER(5,2)", "nullable": true, "description": "가용률 (%)"},
+        {"name": "PERFORMANCE_RATE", "type": "NUMBER(5,2)", "nullable": true, "description": "성능률 (%)"},
+        {"name": "QUALITY_RATE", "type": "NUMBER(5,2)", "nullable": true, "description": "품질률 (%)"},
+        {"name": "OEE_SCORE", "type": "NUMBER(5,2)", "nullable": true, "description": "OEE 점수 (%)"},
+        {"name": "MTBF_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "평균 고장 간격 (시간)"},
+        {"name": "MTTR_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "평균 수리 시간 (시간)"},
+        {"name": "PRODUCTION_COUNT", "type": "NUMBER(10)", "nullable": true, "description": "생산량"},
+        {"name": "DEFECT_COUNT", "type": "NUMBER(10)", "nullable": true, "description": "불량 수량"},
+        {"name": "ENERGY_CONSUMPTION", "type": "NUMBER(15,2)", "nullable": true, "description": "에너지 소비량 (kWh)"},
+        {"name": "OPERATING_COST", "type": "NUMBER(15,2)", "nullable": true, "description": "운영 비용"},
+        {"name": "MAINTENANCE_COST", "type": "NUMBER(15,2)", "nullable": true, "description": "유지보수 비용"},
+        {"name": "DOWNTIME_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "정지 시간"},
+        {"name": "UPTIME_HOURS", "type": "NUMBER(10,2)", "nullable": true, "description": "가동 시간"},
+        {"name": "UTILIZATION_RATE", "type": "NUMBER(5,2)", "nullable": true, "description": "활용률 (%)"},
+        {"name": "CREATED_DATE", "type": "TIMESTAMP", "nullable": true, "description": "생성일시"}
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "EB_MAINTENANCE_HISTORY",
+      "to": "EB_EQUIPMENT",
+      "type": "MANY_TO_ONE",
+      "foreign_key": "EQUIPMENT_ID"
+    },
+    {
+      "from": "EB_ALARMS_EVENTS",
+      "to": "EB_EQUIPMENT",
+      "type": "MANY_TO_ONE",
+      "foreign_key": "EQUIPMENT_ID"
+    },
+    {
+      "from": "EB_SENSOR_DATA",
+      "to": "EB_EQUIPMENT",
+      "type": "MANY_TO_ONE",
+      "foreign_key": "EQUIPMENT_ID"
+    },
+    {
+      "from": "EB_WORK_ORDERS",
+      "to": "EB_EQUIPMENT",
+      "type": "MANY_TO_ONE",
+      "foreign_key": "EQUIPMENT_ID"
+    },
+    {
+      "from": "EB_PERFORMANCE_KPI",
+      "to": "EB_EQUIPMENT",
+      "type": "MANY_TO_ONE",
+      "foreign_key": "EQUIPMENT_ID"
+    }
+  ],
+  "sample_queries": [
+    {
+      "description": "특정 설비의 최근 알람 조회",
+      "query": "SELECT * FROM EB_ALARMS_EVENTS WHERE EQUIPMENT_ID = ? AND OCCURRENCE_TIME > SYSDATE - 7 ORDER BY OCCURRENCE_TIME DESC"
+    },
+    {
+      "description": "설비별 OEE 점수 조회",
+      "query": "SELECT E.EQUIPMENT_NAME, K.KPI_DATE, K.OEE_SCORE FROM EB_PERFORMANCE_KPI K JOIN EB_EQUIPMENT E ON K.EQUIPMENT_ID = E.EQUIPMENT_ID WHERE K.KPI_DATE = ?"
+    },
+    {
+      "description": "예비 부품 재주문 필요 목록",
+      "query": "SELECT * FROM EB_SPARE_PARTS WHERE QUANTITY_ON_HAND <= REORDER_POINT AND STATUS = 'ACTIVE'"
+    },
+    {
+      "description": "진행중인 작업 지시 조회",
+      "query": "SELECT * FROM EB_WORK_ORDERS WHERE STATUS IN ('SCHEDULED', 'IN_PROGRESS') ORDER BY PRIORITY, SCHEDULED_START"
+    },
+    {
+      "description": "설비별 유지보수 비용 분석",
+      "query": "SELECT EQUIPMENT_ID, SUM(COST) AS TOTAL_COST, COUNT(*) AS MAINTENANCE_COUNT FROM EB_MAINTENANCE_HISTORY WHERE MAINTENANCE_DATE BETWEEN ? AND ? GROUP BY EQUIPMENT_ID"
+    }
+  ]
+}

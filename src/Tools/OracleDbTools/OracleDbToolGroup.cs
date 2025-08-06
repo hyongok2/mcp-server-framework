@@ -180,6 +180,15 @@ public class OracleDbToolGroup : BaseToolGroup
         if (string.IsNullOrEmpty(_connectionString))
             return ToolCallResult.Fail("Connection string not configured.");
 
+        var dllDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        string filePath = Path.Combine(dllDirectory, "sample-database-info.json");
+        var readLines = await File.ReadAllLinesAsync(filePath);
+
+        return new { readLines };
+
+        // 아래는 전체 DB를 가져오는 것이지만, 실제의 경우에는 반드시 사용하는 Table에 대한 정보만 가져와야 합니다.
+        // 그래서 위와 같이 Table 정보는 json으로 작성하도록 합니다. 
+
         try
         {
             using var conn = new OracleConnection(_connectionString);
