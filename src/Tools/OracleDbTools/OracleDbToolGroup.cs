@@ -182,7 +182,7 @@ public class OracleDbToolGroup : BaseToolGroup
 
         var dllDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
         string filePath = Path.Combine(dllDirectory, "sample-database-info.json");
-        var readLines = await File.ReadAllLinesAsync(filePath);
+        var readLines = await File.ReadAllTextAsync(filePath);
 
         return new { readLines };
 
