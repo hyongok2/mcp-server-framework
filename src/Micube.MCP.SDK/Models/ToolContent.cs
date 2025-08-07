@@ -11,11 +11,13 @@ public class ToolContent
     [JsonProperty("text")]
     public string? Text { get; set; }
 
-    [JsonProperty("data")]
-    public object? Data { get; set; }  // 구조화된 데이터용
+    // 호스트로의 응답은 Text로만 수행하도록 한다.
+    // 현재 시점에 호스트에서 구조화된 Data 처리가 안될 수 있음.
+    // [JsonProperty("data")]
+    // public object? Data { get; set; }  // 구조화된 데이터용
 
-    [JsonProperty("mimeType")]
-    public string? MimeType { get; set; }
+    // [JsonProperty("mimeType")]
+    // public string? MimeType { get; set; }
 
     public ToolContent() { }
 
