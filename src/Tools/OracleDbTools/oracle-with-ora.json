@@ -6,15 +6,34 @@
   "Tools": [
     {
       "Name": "Query",
-      "Description": "Execute SELECT queries and return structured results with metadata",
+      "Description": "Execute SELECT queries and return structured results with metadata. 이 도구는 설비의 상세한 정보 조회하는데 사용됩니다.",
       "Parameters": [
         {
           "Name": "sql",
           "Type": "string",
           "Required": true,
-          "Description": "SQL SELECT query to execute. Only SELECT and WITH statements are allowed."
+          "Description": "SQL SELECT query to execute. Only SELECT and WITH statements are allowed. 이 파라미터를 사용하기 전에 반드시 실제 테이블이 존재하는지 확인하고 쿼리문을 만들어 주세요. "
         }
-      ]
+      ],
+      "StructuredOutput": true,
+      "OutputSchema": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Query result rows"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "rowCount": { "type": "number" },
+              "columnCount": { "type": "number" },
+              "columns": { "type": "array" },
+              "truncated": { "type": "boolean" }
+            }
+          }
+        }
+      }
     },
     {
       "Name": "Command",
@@ -30,8 +49,9 @@
     },
     {
       "Name": "GetDatabaseInfo",
-      "Description": "Retrieve comprehensive database schema information including tables, columns, indexes, and database metadata",
-      "Parameters": []
+      "Description": "Retrieve comprehensive database schema information including tables, columns, indexes, and database metadata. 설비와 관련된 모든 데이터베이스의 메타 정보를 가져옵니다.",
+      "Parameters": [],
+      "StructuredOutput": false
     },
     {
       "Name": "TestConnection",
