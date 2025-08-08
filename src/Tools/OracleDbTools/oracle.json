@@ -6,13 +6,13 @@
   "Tools": [
     {
       "Name": "Query",
-      "Description": "Execute SELECT queries and return structured results with metadata. 이 도구는 설비의 상세한 정보 조회하는데 사용됩니다.",
+      "Description": "Execute SELECT queries and return structured results with metadata. this tool is used for searching detail.",
       "Parameters": [
         {
           "Name": "sql",
           "Type": "string",
           "Required": true,
-          "Description": "SQL SELECT query to execute. Only SELECT and WITH statements are allowed. 이 파라미터를 사용하기 전에 반드시 실제 테이블이 존재하는지 확인하고 쿼리문을 만들어 주세요. "
+          "Description": "SQL SELECT query to execute. Only SELECT and WITH statements are allowed. before ganerating this parameter you have to know the exactly proper Table name. "
         }
       ],
       "StructuredOutput": true,
@@ -49,7 +49,7 @@
     },
     {
       "Name": "GetDatabaseInfo",
-      "Description": "Retrieve comprehensive database schema information including tables, columns, indexes, and database metadata. 설비와 관련된 모든 데이터베이스의 메타 정보를 가져옵니다.",
+      "Description": "Retrieve comprehensive database schema information including tables, columns, indexes, and database metadata.",
       "Parameters": [],
       "StructuredOutput": false
     },
