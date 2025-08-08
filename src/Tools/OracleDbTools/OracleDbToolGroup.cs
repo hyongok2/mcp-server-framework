@@ -182,9 +182,10 @@ public class OracleDbToolGroup : BaseToolGroup
 
         var dllDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
         string filePath = Path.Combine(dllDirectory, "sample-database-info.json");
-        var readLines = await File.ReadAllTextAsync(filePath);
+        var jsonString = await File.ReadAllTextAsync(filePath);
+        var jsonObject = System.Text.Json.JsonSerializer.Deserialize<object>(jsonString);  // ✅ string → object로 역직렬화
 
-        return new { readLines };
+        return System.Text.Json.JsonSerializer.Serialize(jsonObject, new JsonSerializerOptions { WriteIndented = false });
 
         // 아래는 전체 DB를 가져오는 것이지만, 실제의 경우에는 반드시 사용하는 Table에 대한 정보만 가져와야 합니다.
         // 그래서 위와 같이 Table 정보는 json으로 작성하도록 합니다. 
