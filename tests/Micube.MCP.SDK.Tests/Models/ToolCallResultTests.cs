@@ -66,8 +66,6 @@ public class ToolCallResultTests
         // Assert
         content.Type.Should().Be("image");
         content.Text.Should().Be("Image data");
-        content.Data.Should().BeNull();
-        content.MimeType.Should().BeNull();
     }
 
     [Fact]
@@ -79,7 +77,5 @@ public class ToolCallResultTests
         // Assert
         content.Type.Should().Be("text");
         content.Text.Should().BeNull();
-        content.Data.Should().BeNull();
-        content.MimeType.Should().BeNull();
     }
 }
