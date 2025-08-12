@@ -17,6 +17,7 @@ public class SystemContextHostedService : IHostedService
     private readonly PromptOptions _promptOptions;
     private readonly LogOptions _logOptions;
     private readonly IMcpLogger _logger;
+    private readonly IConfigurationValidator _configValidator;
     private CancellationTokenSource? _cancellationTokenSource;
 
     public SystemContextHostedService(
@@ -26,10 +27,12 @@ public class SystemContextHostedService : IHostedService
         IOptions<ToolGroupOptions> toolGroupOptions,
         IOptions<ResourceOptions> resourceOptions,
         IOptions<PromptOptions> promptOptions,
-        IOptions<LogOptions> logOptions)
+        IOptions<LogOptions> logOptions,
+        IConfigurationValidator configValidator)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _configValidator = configValidator ?? throw new ArgumentNullException(nameof(configValidator));
         _features = features.Value;
         _toolGroupOptions = toolGroupOptions.Value;
         _resourceOptions = resourceOptions.Value;
@@ -44,7 +47,7 @@ public class SystemContextHostedService : IHostedService
         try
         {
             // 1. 설정 검증 및 초기화 (가장 먼저 실행)
-            ConfigurationValidator.ValidateAndSetup(
+            _configValidator.ValidateAndSetup(
                 _toolGroupOptions,
                 _resourceOptions, 
                 _promptOptions,

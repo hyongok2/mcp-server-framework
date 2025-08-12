@@ -5,15 +5,15 @@ using Micube.MCP.SDK.Interfaces;
 namespace Micube.MCP.Server.Options;
 
 /// <summary>
-/// 설정 검증 유틸리티 클래스
+/// 설정 검증 서비스 클래스
 /// SystemContextHostedService에서 사용됩니다.
 /// </summary>
-public static class ConfigurationValidator
+public class ConfigurationValidator : IConfigurationValidator
 {
     /// <summary>
     /// 모든 설정을 검증하고 필요한 디렉토리를 생성합니다
     /// </summary>
-    public static void ValidateAndSetup(
+    public void ValidateAndSetup(
         ToolGroupOptions toolGroupOptions,
         ResourceOptions resourceOptions,
         PromptOptions promptOptions,
@@ -47,7 +47,7 @@ public static class ConfigurationValidator
         logger.LogInfo("Configuration validation completed successfully.");
     }
 
-    private static void ValidateFeatureOptions(FeatureOptions featureOptions, List<string> errors, IMcpLogger logger)
+    private void ValidateFeatureOptions(FeatureOptions featureOptions, List<string> errors, IMcpLogger logger)
     {
         if (!featureOptions.EnableStdio && !featureOptions.EnableHttp)
         {
@@ -59,7 +59,7 @@ public static class ConfigurationValidator
         }
     }
 
-    private static void ValidateAndCreateDirectories(
+    private void ValidateAndCreateDirectories(
         ToolGroupOptions toolGroupOptions,
         ResourceOptions resourceOptions,
         PromptOptions promptOptions,
@@ -96,7 +96,7 @@ public static class ConfigurationValidator
         }
     }
 
-    private static void ValidateToolWhitelist(ToolGroupOptions toolGroupOptions, List<string> errors, IMcpLogger logger)
+    private void ValidateToolWhitelist(ToolGroupOptions toolGroupOptions, List<string> errors, IMcpLogger logger)
     {
         if (toolGroupOptions.Whitelist == null || toolGroupOptions.Whitelist.Count == 0)
         {
@@ -122,7 +122,7 @@ public static class ConfigurationValidator
         }
     }
 
-    private static void ValidateLogOptions(LogOptions logOptions, List<string> errors, IMcpLogger logger)
+    private void ValidateLogOptions(LogOptions logOptions, List<string> errors, IMcpLogger logger)
     {
         if (logOptions.File.MaxFileSizeMB <= 0)
         {

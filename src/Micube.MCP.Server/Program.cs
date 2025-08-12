@@ -90,6 +90,7 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<ICapabilitiesService, CapabilitiesService>();
     services.AddSingleton<IMessageValidator, MessageValidator>();
     services.AddSingleton<ISessionState, SessionState>();
+    services.AddSingleton<IConfigurationValidator, ConfigurationValidator>();
 
     // 핸들러들 등록
     services.AddTransient<IMethodHandler, InitializeHandler>();
