@@ -34,6 +34,7 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
     image: mcp-server:latest
+    # image: micube.mcp.server:1.0.0
     # 또는 버전 태그
     # image: mcp-server:1.0.0
 ```
@@ -102,7 +103,7 @@ docker images | grep mcp-server
 
 ## ✅ 4. 이미지 실행 (직접 또는 Compose 사용)
 
-### 1) Docker 명령어로 직접 실행 (STDIO 모드)
+### 1) Docker 명령어로 직접 실행 (STDIO 모드)  (Docker로 STDIO를 사용하는 것은 권장하지 않습니다.)
 
 ```bash
 # 기본 실행
@@ -122,7 +123,7 @@ docker run --rm -i \
 # HTTP 서버 모드
 docker run -d \
     --name mcp-server-http \
-    -p 5000:5000 \
+    -p 5555:5555 \
     -v $(pwd)/config:/app/config:ro \
     -v $(pwd)/tools:/app/tools:ro \
     -v $(pwd)/docs:/app/docs:ro \
@@ -136,42 +137,50 @@ docker run -d \
 ### 3) docker-compose 사용
 
 ```yaml
-# docker-compose.production.yml
+# docker-compose.yml
 version: '3.8'
 
 services:
   mcp-server:
-    image: mcp-server:1.0.0  # build 항목 제거, image만 사용
-    container_name: mcp-server-prod
-    restart: unless-stopped
-    
+    # 배포시에는 build 항목은 삭제한다.
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: mcp-server
+    image: micube.mcp.server:1.0.0
+    # Docker 사용 시에는 Http 기준으로만 사용한다.
+    ports:
+      - "5555:5555"
     volumes:
+      # 설정 파일 마운트
       - ./config:/app/config:ro
-      - ./tools:/app/tools:ro
-      - ./docs:/app/docs:ro
-      - ./prompts:/app/prompts:ro
+      # 로그 디렉토리 마운트
       - ./logs:/app/logs
-    
+      # 커스텀 도구들 마운트
+      - ./tools:/app/tools:ro
+      # 문서 리소스 마운트
+      - ./docs:/app/docs:ro
+      # 프롬프트 마운트
+      - ./prompts:/app/prompts:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - Features__EnableStdio=true
-      - Features__EnableHttp=false
-      - Logging__MinLevel=Info
-    
-    # HTTP 모드 사용시 포트 설정
-    # ports:
-    #   - "5000:5000"
-    
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
+      - ASPNETCORE_URLS=http://*:5555
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://host.docker.internal:5555/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: "no"  
+
+networks:
+  default:
+    name: mcp-network
 ```
 
 **실행 명령:**
 ```bash
-docker compose -f docker-compose.production.yml up -d
+docker compose -f docker-compose.yml up -d
 ```
 
 ---
@@ -180,7 +189,7 @@ docker compose -f docker-compose.production.yml up -d
 
 ### 헬스체크 (HTTP 모드)
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:5555/health
 ```
 
 ### STDIO 모드 테스트
@@ -192,7 +201,7 @@ docker exec -i mcp-server-prod cat
 
 ### 도구 목록 확인 (HTTP 모드)
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
 ```

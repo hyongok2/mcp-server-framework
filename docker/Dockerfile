@@ -1,7 +1,7 @@
 # Use the official .NET runtime as a parent image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 5000
+EXPOSE 5555
 
 # Use the official .NET SDK as a build image
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -33,7 +33,7 @@ COPY --from=publish /app/publish .
 
 # Set environment variables
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ASPNETCORE_URLS=http://*:5000
+ENV ASPNETCORE_URLS=http://*:5555
 
 # Create non-root user for security
 RUN groupadd -r mcpuser && useradd -r -g mcpuser mcpuser

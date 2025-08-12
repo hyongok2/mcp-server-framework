@@ -157,6 +157,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: mcp-server
+    image: micube.mcp.server:1.0.0
     ports:
       - "5000:5000"
     volumes:
@@ -216,6 +217,7 @@ services:
       dockerfile: docker/Dockerfile
       target: build  # 개발 단계에서 멈춤
     container_name: mcp-server-dev
+    image: micube.mcp.server:1.0.0
     ports:
       - "5000:5000"
     volumes:

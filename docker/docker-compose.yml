@@ -2,13 +2,15 @@ version: '3.8'
 
 services:
   mcp-server:
+    # 배포시에는 build 항목은 삭제한다.
     build:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: mcp-server
-    stdin_open: true          # -i 옵션 (STDIO 필수)
+    image: micube.mcp.server:1.0.0
+    # Docker 사용 시에는 Http 기준으로만 사용한다.
     ports:
-      - "5000:5000"
+      - "5555:5555"
     volumes:
       # 설정 파일 마운트
       - ./config:/app/config:ro
@@ -22,9 +24,9 @@ services:
       - ./prompts:/app/prompts:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://*:5000
+      - ASPNETCORE_URLS=http://*:5555
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://host.docker.internal:5000/health"]
+      test: ["CMD", "curl", "-f", "http://host.docker.internal:5555/health"]
       interval: 30s
       timeout: 10s
       retries: 3

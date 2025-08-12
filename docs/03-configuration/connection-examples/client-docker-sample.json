@@ -1,5 +1,5 @@
 {
-  "// === 🚀 Docker Compose 연결 (가장 권장) ===": "",
+  "// === 🚀 Docker Compose 연결 ===": "",
   "mcpServers": {
     "mcp-compose-stdio": {
       "command": "docker",
