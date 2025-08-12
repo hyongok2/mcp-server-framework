@@ -5,7 +5,6 @@ using Micube.MCP.Core.Dispatcher;
 using Micube.MCP.Core.Models;
 using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.Server.Options;
-using Newtonsoft.Json;
 
 namespace Micube.MCP.Server.Controllers;
 
@@ -16,12 +15,6 @@ public class McpController : ControllerBase
     private readonly IMcpMessageDispatcher _dispatcher;
     private readonly IMcpLogger _logger;
     private readonly FeatureOptions _features;
-
-    private static readonly JsonSerializerSettings _jsonLogSettings = new JsonSerializerSettings
-    {
-        StringEscapeHandling = StringEscapeHandling.Default,
-        Formatting = Formatting.None
-    };
 
     public McpController(IMcpMessageDispatcher dispatcher, IMcpLogger logger, IOptions<FeatureOptions> features)
     {
@@ -38,7 +31,9 @@ public class McpController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] McpMessage message)
     {
-        _logger.LogInfo($"[HTTP] Received message: {JsonConvert.SerializeObject(message, _jsonLogSettings)}");
+        // Convert JsonElement fields to proper JSON string for logging
+        var messageJson = System.Text.Json.JsonSerializer.Serialize(message);
+        _logger.LogInfo($"[HTTP] Received message: {messageJson}");
 
         if (_features.EnableHttp == false)
         {
@@ -67,7 +62,8 @@ public class McpController : ControllerBase
             return NoContent();
         }
 
-        _logger.LogInfo($"[HTTP] Response: {JsonConvert.SerializeObject(result, _jsonLogSettings)}");
+        var responseJson = System.Text.Json.JsonSerializer.Serialize(result);
+        _logger.LogInfo($"[HTTP] Response: {responseJson}");
 
         return Ok(result);
     }
