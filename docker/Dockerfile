@@ -36,8 +36,8 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://*:5555
 
 # Create non-root user for security
-RUN groupadd -r mcpuser && useradd -r -g mcpuser mcpuser
-RUN chown -R mcpuser:mcpuser /app
-USER mcpuser
+#RUN groupadd -r mcpuser && useradd -r -g mcpuser mcpuser
+#RUN chown -R mcpuser:mcpuser /app
+#USER mcpuser
 
 ENTRYPOINT ["dotnet", "Micube.MCP.Server.dll"]
