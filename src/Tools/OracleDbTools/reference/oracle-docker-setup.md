@@ -97,3 +97,4 @@ DATABASE IS READY TO USE!
 
 * `.ora` 파일을 사용하여 연결 설정을 하는경우 ora 파일도 dll 파일과 같은 경로에 배치할 수 있다.
 * 현재 Sample로 ora 파일 사용 Case와 Connecting String만 사용하는 Case의 json을 제공하고 있다.
+* ora 파일 사용 Case와 Connecting String 중에 LocalHost를 사용하는 경우, Docker 기반 사용인 경우 **host.docker.internal**로 변경 사용해야 한다.

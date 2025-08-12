@@ -70,6 +70,7 @@ tar -czf mcp-server-deployment-1.0.0.tar.gz \
 ```
 
 * **주의** 반드시 ToolGroup DLL 파일은 연관된 모든 DLL 파일과 함께 tools폴더에 저장해야 합니다.
+* Tool에서 사용하는 IP 중에 LocalHost가 있는 경우, Docker 기반에서는 반드시 **host.docker.internal**로 변경 사용해야 한다.
 
 ---
 
@@ -138,8 +139,6 @@ docker run -d \
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
-
 services:
   mcp-server:
     # 배포시에는 build 항목은 삭제한다.
@@ -148,6 +147,8 @@ services:
       dockerfile: docker/Dockerfile
     container_name: mcp-server
     image: micube.mcp.server:1.0.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # 이렇게 하면 호스트 IP 설정이 필요한 곳에서는  host.docker.internal <- 이렇게 쓰면 된다.  
     # Docker 사용 시에는 Http 기준으로만 사용한다.
     ports:
       - "5555:5555"

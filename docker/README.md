@@ -67,3 +67,4 @@ curl http://localhost:5555/health
 
 * **주의** 반드시 ToolGroup DLL 파일은 연관된 모든 DLL 파일과 함께 tools폴더에 저장해야 합니다.
 * 예를 들어 오라클연동하는 Tool인 경우 오라클라이브러리DLL을 포함하여 연관된 모든 DLL 파일을 tools 폴더에 저장해야 합니다.
+* ora 파일 사용 Case와 Connecting String 중에 IP가 LocalHost를 사용하는 경우, Docker 기반 사용인 경우 **host.docker.internal**로 변경 사용해야 한다.
