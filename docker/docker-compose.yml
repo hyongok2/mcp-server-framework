@@ -6,9 +6,11 @@ services:
       dockerfile: docker/Dockerfile
     container_name: mcp-server
     image: micube.mcp.server:1.0.0
+    # stdin_open: true  # -i 옵션 (STDIO 필수) STDIO를 사용하는 경우는 이 항목 주석을 풀고 appsettings.json 파일에 EnableStdio를 true로 설정해야 한다.
+    # 만약 stdin_open: true 이 옵션 없이 EnableStdio를 true로 설정하면, CPU 과부하가 발생된다.(!!!!!!!!!! 주의 할 것 !!!!!!!!!!)
     extra_hosts:
       - "host.docker.internal:host-gateway" # 이렇게 하면 호스트 IP 설정이 필요한 곳에서는  host.docker.internal <- 이렇게 쓰면 된다.  
-    # Docker 사용 시에는 Http 기준으로만 사용한다.
+    # Docker 사용 시에는 Http 기준으로만 사용한다. 반드시 appsettings.json 파일에 EnableStdio를 false로 설정해야 한다.
     ports:
       - "5555:5555"
     volumes:
