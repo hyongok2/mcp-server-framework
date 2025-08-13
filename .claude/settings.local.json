@@ -29,7 +29,10 @@
       "Bash(echo:*)",
       "Bash(\"../bin/Release/net8.0/win-x64/publish/mcp-validator.exe\")",
       "Bash(dir logs)",
-      "Bash(../bin/Release/net8.0/win-x64/publish/mcp-validator.exe)"
+      "Bash(../bin/Release/net8.0/win-x64/publish/mcp-validator.exe)",
+      "Bash(dotnet build:*)",
+      "Bash(mcp-validator.exe:*)",
+      "Bash(./mcp-validator.exe --version)"
     ],
     "deny": [],
     "ask": []

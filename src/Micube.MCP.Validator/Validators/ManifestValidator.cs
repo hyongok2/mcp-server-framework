@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Micube.MCP.Core.MetaData;
 using Micube.MCP.Validator.Models;
+using Micube.MCP.Validator.Constants;
+using Micube.MCP.Validator.Utilities;
 
 namespace Micube.MCP.Validator.Validators;
 
@@ -15,7 +17,7 @@ public class ManifestValidator : IValidator
 
         if (string.IsNullOrEmpty(context.ManifestPath))
         {
-            report.AddError("Manifest", "MAN001", "Manifest path is not specified");
+            report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.PathNotSpecified, "Manifest path is not specified");
             report.Duration = DateTime.UtcNow - startTime;
             return report;
         }
@@ -23,7 +25,7 @@ public class ManifestValidator : IValidator
         // 파일 존재 여부 확인
         if (!File.Exists(context.ManifestPath))
         {
-            report.AddError("Manifest", "MAN002", $"Manifest file not found: {context.ManifestPath}");
+            report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.FileNotFound, $"Manifest file not found: {context.ManifestPath}");
             report.Duration = DateTime.UtcNow - startTime;
             return report;
         }
@@ -37,7 +39,7 @@ public class ManifestValidator : IValidator
             // 빈 파일 검증
             if (string.IsNullOrWhiteSpace(json))
             {
-                report.AddError("Manifest", "MAN003", "Manifest file is empty", context.ManifestPath);
+                report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.EmptyFile, "Manifest file is empty", context.ManifestPath);
                 report.Duration = DateTime.UtcNow - startTime;
                 return report;
             }
@@ -54,7 +56,7 @@ public class ManifestValidator : IValidator
             }
             catch (JsonException ex)
             {
-                report.AddError("Manifest", "MAN004", "Invalid JSON format", 
+                report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.InvalidJsonFormat, "Invalid JSON format", 
                     $"Error at line {ex.LineNumber}: {ex.Message}");
                 report.Duration = DateTime.UtcNow - startTime;
                 return report;
@@ -62,7 +64,7 @@ public class ManifestValidator : IValidator
 
             if (metadata == null)
             {
-                report.AddError("Manifest", "MAN005", "Failed to deserialize manifest");
+                report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.DeserializationFailed, "Failed to deserialize manifest");
                 report.Duration = DateTime.UtcNow - startTime;
                 return report;
             }
@@ -79,12 +81,12 @@ public class ManifestValidator : IValidator
             // 버전 형식 검증
             ValidateVersion(metadata, report);
 
-            report.AddInfo("Manifest", "MAN100", 
+            report.AddInfo("Manifest", ValidationConstants.ErrorCodes.Info.ManifestValidated, 
                 $"Successfully validated manifest with {metadata.Tools?.Count ?? 0} tools");
         }
         catch (Exception ex)
         {
-            report.AddError("Manifest", "MAN999", $"Unexpected error during validation: {ex.Message}");
+            report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.UnexpectedError, $"Unexpected error during validation: {ex.Message}");
         }
 
         report.Duration = DateTime.UtcNow - startTime;
@@ -96,27 +98,27 @@ public class ManifestValidator : IValidator
         // GroupName 검증
         if (string.IsNullOrWhiteSpace(metadata.GroupName))
         {
-            report.AddError("Manifest", "MAN010", "Missing or empty 'GroupName' field");
+            report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.MissingGroupName, "Missing or empty 'GroupName' field");
         }
-        else if (metadata.GroupName.Length > 100)
+        else if (metadata.GroupName.Length > ValidationConstants.ValidationLimits.MaxGroupNameLength)
         {
-            report.AddWarning("Manifest", "MAN011", $"GroupName '{metadata.GroupName}' is unusually long (>100 chars)");
+            report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.GroupNameTooLong, $"GroupName '{metadata.GroupName}' is unusually long (>{ValidationConstants.ValidationLimits.MaxGroupNameLength} chars)");
         }
 
         // Description 검증
         if (string.IsNullOrWhiteSpace(metadata.Description))
         {
-            report.AddWarning("Manifest", "MAN012", "Missing or empty 'Description' field");
+            report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.MissingDescription, "Missing or empty 'Description' field");
         }
 
         // Tools 배열 검증
         if (metadata.Tools == null)
         {
-            report.AddError("Manifest", "MAN013", "Missing 'Tools' array");
+            report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.MissingToolsArray, "Missing 'Tools' array");
         }
         else if (metadata.Tools.Count == 0)
         {
-            report.AddWarning("Manifest", "MAN014", "Tools array is empty");
+            report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.EmptyToolsArray, "Tools array is empty");
         }
     }
 
@@ -134,7 +136,7 @@ public class ManifestValidator : IValidator
             // Tool 이름 검증
             if (string.IsNullOrWhiteSpace(tool.Name))
             {
-                report.AddError("Manifest", "MAN020", 
+                report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.MissingToolName, 
                     $"{toolIdentifier}: Missing or empty 'Name' field");
             }
             else
@@ -144,19 +146,19 @@ public class ManifestValidator : IValidator
                 // 중복 검사
                 if (!toolNames.Add(tool.Name))
                 {
-                    report.AddError("Manifest", "MAN021", 
+                    report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.DuplicateToolName, 
                         $"{toolIdentifier}: Duplicate tool name found");
                 }
 
                 // 이름 규칙 검증
-                if (!System.Text.RegularExpressions.Regex.IsMatch(tool.Name, @"^[a-zA-Z][a-zA-Z0-9_]*$"))
+                if (!System.Text.RegularExpressions.Regex.IsMatch(tool.Name, ValidationConstants.RegexPatterns.ValidToolName))
                 {
                     var severity = strictMode ? IssueSeverity.Error : IssueSeverity.Warning;
                     var issue = new ValidationIssue
                     {
                         Severity = severity,
                         Category = "Manifest",
-                        Code = "MAN022",
+                        Code = ValidationConstants.ErrorCodes.Manifest.InvalidToolNameFormat,
                         Message = $"{toolIdentifier}: Tool name should start with a letter and contain only letters, numbers, and underscores",
                         Suggestion = "Consider using PascalCase or camelCase naming convention"
                     };
@@ -167,7 +169,7 @@ public class ManifestValidator : IValidator
             // Description 검증
             if (string.IsNullOrWhiteSpace(tool.Description))
             {
-                report.AddWarning("Manifest", "MAN023", 
+                report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.MissingToolDescription, 
                     $"{toolIdentifier}: Missing or empty 'Description' field");
             }
 
@@ -177,7 +179,7 @@ public class ManifestValidator : IValidator
             // StructuredOutput 검증
             if (tool.StructuredOutput && tool.OutputSchema == null)
             {
-                report.AddWarning("Manifest", "MAN024",
+                report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.StructuredOutputWithoutSchema,
                     $"{toolIdentifier}: StructuredOutput is true but OutputSchema is not defined");
             }
         }
@@ -189,7 +191,7 @@ public class ManifestValidator : IValidator
         {
             if (strictMode)
             {
-                report.AddInfo("Manifest", "MAN030", 
+                report.AddInfo("Manifest", ValidationConstants.ErrorCodes.Info.ManifestValidated, 
                     $"{toolIdentifier}: No parameters defined");
             }
             return;
@@ -205,7 +207,7 @@ public class ManifestValidator : IValidator
             // 파라미터 이름 검증
             if (string.IsNullOrWhiteSpace(param.Name))
             {
-                report.AddError("Manifest", "MAN031", 
+                report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.EmptyParameterName, 
                     $"{toolIdentifier}: Parameter with empty name found");
                 continue;
             }
@@ -213,17 +215,16 @@ public class ManifestValidator : IValidator
             // 중복 검사
             if (!paramNames.Add(param.Name))
             {
-                report.AddError("Manifest", "MAN032", 
+                report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.DuplicateParameterName, 
                     $"{paramIdentifier}: Duplicate parameter name");
             }
 
             // 타입 검증
-            var validTypes = new[] { "string", "int", "integer", "number", "bool", "boolean", "object", "array" };
-            if (!validTypes.Contains(param.Type.ToLowerInvariant()))
+            if (!ValidationHelper.IsValidParameterType(param.Type))
             {
-                report.AddError("Manifest", "MAN033", 
+                report.AddError("Manifest", ValidationConstants.ErrorCodes.Manifest.InvalidParameterType, 
                     $"{paramIdentifier}: Invalid type '{param.Type}'",
-                    $"Valid types: {string.Join(", ", validTypes)}");
+                    $"Valid types: {string.Join(", ", ValidationHelper.GetValidParameterTypes())}");
             }
 
             // Required/Optional 순서 검증
@@ -231,7 +232,7 @@ public class ManifestValidator : IValidator
             {
                 if (hasOptional)
                 {
-                    report.AddWarning("Manifest", "MAN034",
+                    report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.RequiredAfterOptional,
                         $"{paramIdentifier}: Required parameter defined after optional parameters",
                         "Consider placing all required parameters before optional ones");
                 }
@@ -244,7 +245,7 @@ public class ManifestValidator : IValidator
             // Description 검증
             if (string.IsNullOrWhiteSpace(param.Description) && strictMode)
             {
-                report.AddWarning("Manifest", "MAN035",
+                report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.MissingParameterDescription,
                     $"{paramIdentifier}: Missing parameter description");
             }
         }
@@ -254,15 +255,15 @@ public class ManifestValidator : IValidator
     {
         if (string.IsNullOrWhiteSpace(metadata.Version))
         {
-            report.AddInfo("Manifest", "MAN040", "Version not specified, defaulting to 1.0.0");
+            report.AddInfo("Manifest", ValidationConstants.ErrorCodes.Info.ManifestValidated, "Version not specified, defaulting to 1.0.0");
             return;
         }
 
         // Semantic versioning 검증 (간단한 패턴)
-        var versionPattern = @"^\d+\.\d+(\.\d+)?(-[a-zA-Z0-9\-\.]+)?(\+[a-zA-Z0-9\-\.]+)?$";
+        var versionPattern = ValidationConstants.RegexPatterns.SemanticVersion;
         if (!System.Text.RegularExpressions.Regex.IsMatch(metadata.Version, versionPattern))
         {
-            report.AddWarning("Manifest", "MAN041",
+            report.AddWarning("Manifest", ValidationConstants.ErrorCodes.Manifest.InvalidVersion,
                 $"Version '{metadata.Version}' does not follow semantic versioning",
                 "Expected format: MAJOR.MINOR.PATCH (e.g., 1.0.0)");
         }

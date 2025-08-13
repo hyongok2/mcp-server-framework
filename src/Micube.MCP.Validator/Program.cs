@@ -2,6 +2,7 @@
 using System.Text;
 using Micube.MCP.Validator.Models;
 using Micube.MCP.Validator.Services;
+using Micube.MCP.Validator.Constants;
 using Spectre.Console;
 
 namespace Micube.MCP.Validator;
@@ -26,7 +27,7 @@ class Program
             // 로거 초기화 (실행 파일과 같은 디렉토리에 logs 폴더)
             var logDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
             _logger = new FileLogger(logDir);
-            _logger.LogInfo("Program", "Application started", $"Args: [{string.Join(", ", args)}]");
+            _logger.LogInfo("Program", ValidationConstants.Messages.ApplicationStarted, $"Args: [{string.Join(", ", args)}]");
 
             // 단순한 인자 처리
             if (args.Length > 0)
@@ -37,13 +38,13 @@ class Program
                 if (arg == "--help" || arg == "-h" || arg == "help")
                 {
                     exitCode = await ShowHelp();
-                    _logger.LogInfo("Program", "Help displayed", $"Exit code: {exitCode}");
+                    _logger.LogInfo("Program", ValidationConstants.Messages.HelpDisplayed, $"Exit code: {exitCode}");
                     return exitCode;
                 }
                 if (arg == "--version" || arg == "-v" || arg == "version")
                 {
                     exitCode = await ShowVersion();
-                    _logger.LogInfo("Program", "Version displayed", $"Exit code: {exitCode}");
+                    _logger.LogInfo("Program", ValidationConstants.Messages.VersionDisplayed, $"Exit code: {exitCode}");
                     return exitCode;
                 }
             }
@@ -51,7 +52,7 @@ class Program
             // 기본 동작: 현재 디렉토리의 모든 MCP 툴 검증
             _logger.LogInfo("Program", "Starting validation", "Running main validation process");
             exitCode = await RunValidation();
-            _logger.LogInfo("Program", "Validation completed", $"Exit code: {exitCode}");
+            _logger.LogInfo("Program", ValidationConstants.Messages.ValidationCompleted, $"Exit code: {exitCode}");
             
             return exitCode;
         }
@@ -73,7 +74,7 @@ class Program
         {
             try
             {
-                _logger?.LogInfo("Program", "Application ending", $"Final exit code: {exitCode}");
+                _logger?.LogInfo("Program", ValidationConstants.Messages.ApplicationEnding, $"Final exit code: {exitCode}");
                 _logger?.Dispose();
             }
             catch
@@ -85,7 +86,7 @@ class Program
             try
             {
                 AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[dim]Press any key to exit...[/]");
+                AnsiConsole.MarkupLine($"[dim]{ValidationConstants.Messages.PressAnyKeyToExit}[/]");
                 Console.ReadKey(true);
             }
             catch
@@ -116,90 +117,119 @@ class Program
             var currentDir = Directory.GetCurrentDirectory();
             _logger?.LogInfo("RunValidation", "Starting validation process", $"Directory: {currentDir}");
             
-            // 로고 표시
             PrintLogo();
 
-            // ValidationContext 생성 (현재 디렉토리, Full 검증)
-            var context = new ValidationContext
-            {
-                DirectoryPath = currentDir,
-                StrictMode = false,
-                Level = ValidationLevel.Full
-            };
-
-            _logger?.LogInfo("RunValidation", "ValidationContext created", 
-                $"Directory: {context.DirectoryPath}, StrictMode: {context.StrictMode}, Level: {context.Level}");
-
-            ValidationReport report;
+            var context = CreateValidationContext(currentDir);
+            var report = await ExecuteValidation(context);
             
-            // 검증 실행
-            try
-            {
-                report = await AnsiConsole.Status()
-                    .Spinner(Spinner.Known.Dots)
-                    .SpinnerStyle(Style.Parse("yellow"))
-                    .StartAsync("Validating MCP tools...", async ctx =>
-                    {
-                        _logger?.LogInfo("RunValidation", "Starting orchestrator validation");
-                        var orchestrator = new ValidationOrchestrator(_logger);
-                        var result = await orchestrator.ValidateAsync(context);
-                        _logger?.LogInfo("RunValidation", "Orchestrator validation completed", 
-                            $"IsValid: {result.IsValid}, Issues: {result.Issues.Count}");
-                        return result;
-                    });
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogCritical("RunValidation", "Validation process failed", "Error during validation execution", ex);
-                
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[red bold]❌ VALIDATION FAILED[/]");
-                AnsiConsole.MarkupLine("[red]An error occurred during the validation process.[/]");
-                AnsiConsole.WriteLine();
-                AnsiConsole.WriteException(ex);
-                
-                return -1;
-            }
+            if (report == null) return -1;
 
-            // 리포트 생성 및 출력
-            try
-            {
-                _logger?.LogInfo("RunValidation", "Generating console report", 
-                    $"Total issues: {report.Issues.Count}, Errors: {report.Issues.Count(i => i.Severity == IssueSeverity.Error)}");
-                
-                var reportGenerator = new ReportGenerator();
-                reportGenerator.PrintConsoleReport(report);
-                
-                _logger?.LogInfo("RunValidation", "Console report generated successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError("RunValidation", "Failed to generate console report", "Report generation error", ex);
-                
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[red]❌ Failed to generate report, but validation completed.[/]");
-                AnsiConsole.WriteException(ex);
-            }
-
-            // 종료 코드 반환 (0 = 성공, 1 = 실패)
-            var exitCode = report.IsValid ? 0 : 1;
-            _logger?.LogInfo("RunValidation", "Validation process completed", 
-                $"ExitCode: {exitCode}, IsValid: {report.IsValid}");
-            
-            return exitCode;
+            GenerateReport(report);
+            return GetExitCode(report);
         }
         catch (Exception ex)
         {
-            _logger?.LogCritical("RunValidation", "Fatal error in validation process", "Unhandled exception", ex);
-            
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[red bold]❌ FATAL ERROR[/]");
-            AnsiConsole.MarkupLine("[red]A fatal error occurred during validation.[/]");
-            AnsiConsole.WriteLine();
-            AnsiConsole.WriteException(ex);
-            
-            return -1;
+            return HandleFatalError(ex);
         }
+    }
+
+    private static ValidationContext CreateValidationContext(string currentDir)
+    {
+        var context = new ValidationContext
+        {
+            DirectoryPath = currentDir,
+            StrictMode = false,
+            Level = ValidationLevel.Full
+        };
+
+        _logger?.LogInfo("RunValidation", "ValidationContext created", 
+            $"Directory: {context.DirectoryPath}, StrictMode: {context.StrictMode}, Level: {context.Level}");
+
+        return context;
+    }
+
+    private static async Task<ValidationReport?> ExecuteValidation(ValidationContext context)
+    {
+        try
+        {
+            return await AnsiConsole.Status()
+                .Spinner(Spinner.Known.Dots)
+                .SpinnerStyle(Style.Parse("yellow"))
+                .StartAsync(ValidationConstants.Messages.ValidatingMcpTools, async ctx =>
+                {
+                    _logger?.LogInfo("RunValidation", "Starting orchestrator validation");
+                    var orchestrator = new ValidationOrchestrator(_logger);
+                    var result = await orchestrator.ValidateAsync(context);
+                    _logger?.LogInfo("RunValidation", "Orchestrator validation completed", 
+                        $"IsValid: {result.IsValid}, Issues: {result.Issues.Count}");
+                    return result;
+                });
+        }
+        catch (Exception ex)
+        {
+            HandleValidationError(ex);
+            return null;
+        }
+    }
+
+    private static void HandleValidationError(Exception ex)
+    {
+        _logger?.LogCritical("RunValidation", "Validation process failed", "Error during validation execution", ex);
+        
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine($"[red bold]❌ {ValidationConstants.Messages.ValidationFailed}[/]");
+        AnsiConsole.MarkupLine("[red]An error occurred during the validation process.[/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteException(ex);
+    }
+
+    private static void GenerateReport(ValidationReport report)
+    {
+        try
+        {
+            _logger?.LogInfo("RunValidation", "Generating console report", 
+                $"Total issues: {report.Issues.Count}, Errors: {report.Issues.Count(i => i.Severity == IssueSeverity.Error)}");
+            
+            var reportGenerator = new ReportGenerator();
+            reportGenerator.PrintConsoleReport(report);
+            
+            _logger?.LogInfo("RunValidation", "Console report generated successfully");
+        }
+        catch (Exception ex)
+        {
+            HandleReportGenerationError(ex);
+        }
+    }
+
+    private static void HandleReportGenerationError(Exception ex)
+    {
+        _logger?.LogError("RunValidation", "Failed to generate console report", "Report generation error", ex);
+        
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[red]❌ Failed to generate report, but validation completed.[/]");
+        AnsiConsole.WriteException(ex);
+    }
+
+    private static int GetExitCode(ValidationReport report)
+    {
+        var exitCode = report.IsValid ? 0 : 1;
+        _logger?.LogInfo("RunValidation", "Validation process completed", 
+            $"ExitCode: {exitCode}, IsValid: {report.IsValid}");
+        
+        return exitCode;
+    }
+
+    private static int HandleFatalError(Exception ex)
+    {
+        _logger?.LogCritical("RunValidation", "Fatal error in validation process", "Unhandled exception", ex);
+        
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine($"[red bold]❌ {ValidationConstants.Messages.FatalError}[/]");
+        AnsiConsole.MarkupLine("[red]A fatal error occurred during validation.[/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteException(ex);
+        
+        return -1;
     }
 
     static Task<int> ShowVersion()

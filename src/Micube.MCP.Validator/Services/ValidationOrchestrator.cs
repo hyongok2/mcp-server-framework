@@ -1,5 +1,6 @@
 using Micube.MCP.Validator.Models;
 using Micube.MCP.Validator.Validators;
+using Micube.MCP.Validator.Constants;
 using System.Reflection;
 using Micube.MCP.SDK.Attributes;
 
@@ -66,7 +67,7 @@ public class ValidationOrchestrator
             
             // 예외가 발생해도 기본 리포트 반환
             var errorReport = new ValidationReport { Context = context };
-            errorReport.AddError("Orchestrator", "ORCH999", 
+            errorReport.AddError("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.ProcessingCrashed, 
                 $"Validation process crashed: {ex.Message}", ex.ToString());
             errorReport.Duration = duration;
             
@@ -129,7 +130,7 @@ public class ValidationOrchestrator
                     _logger?.LogError("ValidateSingleAsync", $"Validator {validator.Name} failed", 
                         "Exception during validation", ex);
                     
-                    combinedReport.AddError("Orchestrator", "ORCH001", 
+                    combinedReport.AddError("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.ValidatorFailed, 
                         $"Validator '{validator.Name}' failed: {ex.Message}", ex.ToString());
                 }
             }
@@ -145,7 +146,7 @@ public class ValidationOrchestrator
                 "Unexpected exception", ex);
             
             var errorReport = new ValidationReport { Context = context };
-            errorReport.AddError("Orchestrator", "ORCH002", 
+            errorReport.AddError("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.SingleValidationCrashed, 
                 $"Single validation crashed: {ex.Message}", ex.ToString());
             return errorReport;
         }
@@ -158,183 +159,248 @@ public class ValidationOrchestrator
             var directoryReport = new ValidationReport { Context = context };
             _logger?.LogInfo("ValidateDirectoryAsync", "Starting directory validation", context.DirectoryPath);
 
-            if (!Directory.Exists(context.DirectoryPath))
+            if (!ValidateDirectoryExists(context.DirectoryPath!, directoryReport))
             {
-                _logger?.LogError("ValidateDirectoryAsync", "Directory not found", context.DirectoryPath);
-                directoryReport.AddError("Orchestrator", "ORCH010", 
-                    $"Directory not found: {context.DirectoryPath}");
                 return directoryReport;
             }
 
-            try
+            var dllFiles = FindDllFiles(context.DirectoryPath!, directoryReport);
+            if (dllFiles == null)
             {
-                // DLL 파일 찾기 (obj 폴더 제외)
-                _logger?.LogInfo("ValidateDirectoryAsync", "Searching for DLL files", context.DirectoryPath);
-                var dllFiles = Directory.GetFiles(context.DirectoryPath, "*.dll", SearchOption.AllDirectories)
-                    .Where(f => !f.Contains("\\obj\\") && !f.Contains("/obj/"))
-                    .ToArray();
-                
-                _logger?.LogInfo("ValidateDirectoryAsync", "DLL files found", 
-                    $"Count: {dllFiles.Length}, Files: [{string.Join(", ", dllFiles.Select(Path.GetFileName))}]");
-                
-                if (dllFiles.Length == 0)
-                {
-                    _logger?.LogWarning("ValidateDirectoryAsync", "No DLL files found", context.DirectoryPath);
-                    directoryReport.AddWarning("Orchestrator", "ORCH011", 
-                        $"No DLL files found in directory: {context.DirectoryPath}");
-                    return directoryReport;
-                }
-
-                directoryReport.AddInfo("Orchestrator", "ORCH100", 
-                    $"Found {dllFiles.Length} DLL file(s) to validate");
-
-                // 각 DLL에 대해 검증
-                var validatedDlls = 0;
-                foreach (var dllFile in dllFiles)
-                {
-                    try
-                    {
-                        _logger?.LogInfo("ValidateDirectoryAsync", "Processing DLL", $"File: {Path.GetFileName(dllFile)}");
-                        
-                        var dllName = Path.GetFileName(dllFile);
-                        var dllDir = Path.GetDirectoryName(dllFile)!;
-
-                        // 먼저 DLL이 MCP 툴인지 빠르게 확인
-                        _logger?.LogInfo("ValidateDirectoryAsync", "Quick check for MCP tool", dllName);
-                        var quickCheck = await ValidateSingleAsync(new ValidationContext
-                        {
-                            DllPath = dllFile,
-                            Level = ValidationLevel.Basic // 빠른 확인용
-                        });
-
-                        // SDK DLL은 항상 제외 (경고 방지)
-                        if (dllName.Equals("Micube.MCP.SDK.dll", StringComparison.OrdinalIgnoreCase))
-                        {
-                            _logger?.LogInfo("ValidateDirectoryAsync", "Skipped SDK DLL", dllName);
-                            directoryReport.AddInfo("Orchestrator", "ORCH102", 
-                                $"Skipped SDK DLL: {dllName}");
-                            continue;
-                        }
-
-                        // 종속 DLL이면 건너뛰기
-                        var isDependencyDll = quickCheck.Issues.Any(i => 
-                            (i.Code == "DLL005" || i.Code == "DLL006" || i.Code == "DLL010") && 
-                            i.Severity == IssueSeverity.Warning);
-
-                        if (isDependencyDll)
-                        {
-                            _logger?.LogInfo("ValidateDirectoryAsync", "Skipped dependency DLL", dllName);
-                            directoryReport.AddInfo("Orchestrator", "ORCH102", 
-                                $"Skipped dependency DLL: {dllName}");
-                            continue;
-                        }
-
-                        validatedDlls++;
-
-                        // DLL에서 McpToolGroup 어트리뷰트를 통해 manifest 파일명 추출
-                        _logger?.LogInfo("ValidateDirectoryAsync", "Extracting manifest filename from DLL", dllName);
-                        var expectedManifestFileName = GetManifestFileNameFromDll(dllFile);
-                        
-                        if (string.IsNullOrEmpty(expectedManifestFileName))
-                        {
-                            _logger?.LogWarning("ValidateDirectoryAsync", "No McpToolGroup attribute found", dllName);
-                            directoryReport.AddWarning("Orchestrator", "ORCH012", 
-                                $"No McpToolGroup attribute found or manifest filename not specified in DLL: {dllName}");
-                            continue;
-                        }
-
-                        _logger?.LogInfo("ValidateDirectoryAsync", "Expected manifest file", 
-                            $"DLL: {dllName}, Manifest: {expectedManifestFileName}");
-
-                        // 같은 디렉토리에서 지정된 manifest 파일 찾기
-                        var manifestFile = Path.Combine(dllDir, expectedManifestFileName);
-                        
-                        if (!File.Exists(manifestFile))
-                        {
-                            _logger?.LogWarning("ValidateDirectoryAsync", "Expected manifest file not found", 
-                                $"DLL: {dllName}, Expected: {expectedManifestFileName}");
-                            directoryReport.AddWarning("Orchestrator", "ORCH013", 
-                                $"Expected manifest file not found: {expectedManifestFileName} for DLL: {dllName}");
-                            continue;
-                        }
-
-                        // DLL과 manifest 조합 검증
-                        var fileContext = new ValidationContext
-                        {
-                            DllPath = dllFile,
-                            ManifestPath = manifestFile,
-                            StrictMode = context.StrictMode,
-                            Level = context.Level
-                        };
-
-                        _logger?.LogInfo("ValidateDirectoryAsync", "Starting MCP tool validation", 
-                            $"DLL: {Path.GetFileName(dllFile)}, Manifest: {Path.GetFileName(manifestFile)}");
-
-                        directoryReport.AddInfo("Orchestrator", "ORCH101", 
-                            $"Validating MCP tool: {Path.GetFileName(dllFile)} with {Path.GetFileName(manifestFile)}");
-
-                        var report = await ValidateSingleAsync(fileContext);
-
-                        // 결과 병합
-                        foreach (var issue in report.Issues)
-                        {
-                            // 파일 경로 정보 추가
-                            issue.FilePath = issue.FilePath ?? dllFile;
-                            directoryReport.AddIssue(issue);
-                        }
-
-                        foreach (var file in report.Statistics.ValidatedFiles)
-                        {
-                            if (!directoryReport.Statistics.ValidatedFiles.Contains(file))
-                            {
-                                directoryReport.Statistics.ValidatedFiles.Add(file);
-                            }
-                        }
-
-                        _logger?.LogInfo("ValidateDirectoryAsync", "MCP tool validation completed", 
-                            $"DLL: {dllName}, Issues: {report.Issues.Count}");
-                    }
-                    catch (Exception ex)
-                    {
-                        var fileName = Path.GetFileName(dllFile);
-                        _logger?.LogError("ValidateDirectoryAsync", $"Error processing DLL: {fileName}", 
-                            "Exception during individual DLL processing", ex);
-                        
-                        directoryReport.AddError("Orchestrator", "ORCH005", 
-                            $"Failed to process DLL '{fileName}': {ex.Message}", ex.ToString());
-                        
-                        // 개별 DLL 오류가 있어도 다른 DLL들은 계속 처리
-                    }
-        }
-
-                directoryReport.AddInfo("Orchestrator", "ORCH103", 
-                    $"Validated {validatedDlls} MCP tool DLL(s) out of {dllFiles.Length} total DLL(s)");
-
-                _logger?.LogInfo("ValidateDirectoryAsync", "Directory validation completed", 
-                    $"Total DLLs: {dllFiles.Length}, Validated: {validatedDlls}, Issues: {directoryReport.Issues.Count}");
-
                 return directoryReport;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogError("ValidateDirectoryAsync", "Error during DLL processing", 
-                    "Exception while processing DLL files", ex);
-                
-                directoryReport.AddError("Orchestrator", "ORCH003", 
-                    $"Error processing directory: {ex.Message}", ex.ToString());
-                return directoryReport;
-            }
+
+            var validatedDlls = await ProcessDllFiles(dllFiles, context, directoryReport);
+
+            AddDirectoryValidationSummary(directoryReport, dllFiles.Length, validatedDlls);
+
+            return directoryReport;
         }
         catch (Exception ex)
         {
-            _logger?.LogCritical("ValidateDirectoryAsync", "Critical error in directory validation", 
-                "Unexpected exception", ex);
-            
-            var errorReport = new ValidationReport { Context = context };
-            errorReport.AddError("Orchestrator", "ORCH004", 
-                $"Directory validation crashed: {ex.Message}", ex.ToString());
-            return errorReport;
+            return HandleDirectoryValidationError(ex, context);
         }
+    }
+
+    private bool ValidateDirectoryExists(string directoryPath, ValidationReport report)
+    {
+        if (!Directory.Exists(directoryPath))
+        {
+            _logger?.LogError("ValidateDirectoryAsync", "Directory not found", directoryPath);
+            report.AddError("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.DirectoryNotFound, 
+                $"Directory not found: {directoryPath}");
+            return false;
+        }
+        return true;
+    }
+
+    private string[]? FindDllFiles(string directoryPath, ValidationReport report)
+    {
+        try
+        {
+            _logger?.LogInfo("ValidateDirectoryAsync", "Searching for DLL files", directoryPath);
+            var dllFiles = Directory.GetFiles(directoryPath, ValidationConstants.FilePatterns.DllExtension, SearchOption.AllDirectories)
+                .Where(f => !f.Contains(ValidationConstants.FilePatterns.ObjDirectory) && 
+                           !f.Contains(ValidationConstants.FilePatterns.ObjDirectoryUnix))
+                .ToArray();
+            
+            _logger?.LogInfo("ValidateDirectoryAsync", "DLL files found", 
+                $"Count: {dllFiles.Length}, Files: [{string.Join(", ", dllFiles.Select(Path.GetFileName))}]");
+            
+            if (dllFiles.Length == 0)
+            {
+                _logger?.LogWarning("ValidateDirectoryAsync", "No DLL files found", directoryPath);
+                report.AddWarning("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.NoDllFilesFound, 
+                    $"No DLL files found in directory: {directoryPath}");
+                return null;
+            }
+
+            report.AddInfo("Orchestrator", ValidationConstants.ErrorCodes.Info.OrchestratorInfo, 
+                $"Found {dllFiles.Length} DLL file(s) to validate");
+
+            return dllFiles;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError("ValidateDirectoryAsync", "Error during DLL processing", 
+                "Exception while processing DLL files", ex);
+            
+            report.AddError("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.DirectoryProcessingError, 
+                $"Error processing directory: {ex.Message}", ex.ToString());
+            return null;
+        }
+    }
+
+    private async Task<int> ProcessDllFiles(string[] dllFiles, ValidationContext context, ValidationReport directoryReport)
+    {
+        var validatedDlls = 0;
+        
+        foreach (var dllFile in dllFiles)
+        {
+            try
+            {
+                if (await ProcessSingleDllFile(dllFile, context, directoryReport))
+                {
+                    validatedDlls++;
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleDllProcessingError(dllFile, ex, directoryReport);
+            }
+        }
+        
+        return validatedDlls;
+    }
+
+    private async Task<bool> ProcessSingleDllFile(string dllFile, ValidationContext context, ValidationReport directoryReport)
+    {
+        _logger?.LogInfo("ValidateDirectoryAsync", "Processing DLL", $"File: {Path.GetFileName(dllFile)}");
+        
+        var dllName = Path.GetFileName(dllFile);
+        
+        if (await ShouldSkipDll(dllFile, directoryReport))
+        {
+            return false;
+        }
+
+        var expectedManifestFileName = GetManifestFileNameFromDll(dllFile);
+        if (string.IsNullOrEmpty(expectedManifestFileName))
+        {
+            LogMissingManifestAttribute(dllName, directoryReport);
+            return false;
+        }
+
+        var manifestFile = Path.Combine(Path.GetDirectoryName(dllFile)!, expectedManifestFileName);
+        if (!File.Exists(manifestFile))
+        {
+            LogMissingManifestFile(dllName, expectedManifestFileName, directoryReport);
+            return false;
+        }
+
+        await ValidateDllManifestPair(dllFile, manifestFile, context, directoryReport);
+        return true;
+    }
+
+    private async Task<bool> ShouldSkipDll(string dllFile, ValidationReport directoryReport)
+    {
+        var dllName = Path.GetFileName(dllFile);
+        
+        if (dllName.Equals(ValidationConstants.AssemblyNames.MicubeMcpSdkDll, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger?.LogInfo("ValidateDirectoryAsync", "Skipped SDK DLL", dllName);
+            directoryReport.AddInfo("Orchestrator", ValidationConstants.ErrorCodes.Info.SkippedDependencyDll, 
+                $"Skipped SDK DLL: {dllName}");
+            return true;
+        }
+
+        var quickCheck = await ValidateSingleAsync(new ValidationContext
+        {
+            DllPath = dllFile,
+            Level = ValidationLevel.Basic
+        });
+
+        var isDependencyDll = quickCheck.Issues.Any(i => 
+            (i.Code == ValidationConstants.ErrorCodes.Dll.TypeLoadWarning || 
+             i.Code == ValidationConstants.ErrorCodes.Dll.AnalysisWarning || 
+             i.Code == ValidationConstants.ErrorCodes.Dll.NoToolGroupImplementation) && 
+            i.Severity == IssueSeverity.Warning);
+
+        if (isDependencyDll)
+        {
+            _logger?.LogInfo("ValidateDirectoryAsync", "Skipped dependency DLL", dllName);
+            directoryReport.AddInfo("Orchestrator", ValidationConstants.ErrorCodes.Info.SkippedDependencyDll, 
+                $"Skipped dependency DLL: {dllName}");
+            return true;
+        }
+
+        return false;
+    }
+
+    private void LogMissingManifestAttribute(string dllName, ValidationReport report)
+    {
+        _logger?.LogWarning("ValidateDirectoryAsync", "No McpToolGroup attribute found", dllName);
+        report.AddWarning("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.NoMcpToolGroupAttribute, 
+            $"No McpToolGroup attribute found or manifest filename not specified in DLL: {dllName}");
+    }
+
+    private void LogMissingManifestFile(string dllName, string expectedManifestFileName, ValidationReport report)
+    {
+        _logger?.LogWarning("ValidateDirectoryAsync", "Expected manifest file not found", 
+            $"DLL: {dllName}, Expected: {expectedManifestFileName}");
+        report.AddWarning("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.ManifestFileNotFound, 
+            $"Expected manifest file not found: {expectedManifestFileName} for DLL: {dllName}");
+    }
+
+    private async Task ValidateDllManifestPair(string dllFile, string manifestFile, ValidationContext context, ValidationReport directoryReport)
+    {
+        var fileContext = new ValidationContext
+        {
+            DllPath = dllFile,
+            ManifestPath = manifestFile,
+            StrictMode = context.StrictMode,
+            Level = context.Level
+        };
+
+        _logger?.LogInfo("ValidateDirectoryAsync", "Starting MCP tool validation", 
+            $"DLL: {Path.GetFileName(dllFile)}, Manifest: {Path.GetFileName(manifestFile)}");
+
+        directoryReport.AddInfo("Orchestrator", ValidationConstants.ErrorCodes.Info.OrchestratorInfo, 
+            $"Validating MCP tool: {Path.GetFileName(dllFile)} with {Path.GetFileName(manifestFile)}");
+
+        var report = await ValidateSingleAsync(fileContext);
+
+        MergeValidationResults(report, directoryReport, dllFile);
+
+        _logger?.LogInfo("ValidateDirectoryAsync", "MCP tool validation completed", 
+            $"DLL: {Path.GetFileName(dllFile)}, Issues: {report.Issues.Count}");
+    }
+
+    private void MergeValidationResults(ValidationReport sourceReport, ValidationReport targetReport, string dllFile)
+    {
+        foreach (var issue in sourceReport.Issues)
+        {
+            issue.FilePath = issue.FilePath ?? dllFile;
+            targetReport.AddIssue(issue);
+        }
+
+        foreach (var file in sourceReport.Statistics.ValidatedFiles)
+        {
+            if (!targetReport.Statistics.ValidatedFiles.Contains(file))
+            {
+                targetReport.Statistics.ValidatedFiles.Add(file);
+            }
+        }
+    }
+
+    private void HandleDllProcessingError(string dllFile, Exception ex, ValidationReport report)
+    {
+        var fileName = Path.GetFileName(dllFile);
+        _logger?.LogError("ValidateDirectoryAsync", $"Error processing DLL: {fileName}", 
+            "Exception during individual DLL processing", ex);
+        
+        report.AddError("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.DllProcessingFailed, 
+            $"Failed to process DLL '{fileName}': {ex.Message}", ex.ToString());
+    }
+
+    private void AddDirectoryValidationSummary(ValidationReport report, int totalDlls, int validatedDlls)
+    {
+        report.AddInfo("Orchestrator", ValidationConstants.ErrorCodes.Info.ValidationComplete, 
+            $"Validated {validatedDlls} MCP tool DLL(s) out of {totalDlls} total DLL(s)");
+
+        _logger?.LogInfo("ValidateDirectoryAsync", "Directory validation completed", 
+            $"Total DLLs: {totalDlls}, Validated: {validatedDlls}, Issues: {report.Issues.Count}");
+    }
+
+    private ValidationReport HandleDirectoryValidationError(Exception ex, ValidationContext context)
+    {
+        _logger?.LogCritical("ValidateDirectoryAsync", "Critical error in directory validation", 
+            "Unexpected exception", ex);
+        
+        var errorReport = new ValidationReport { Context = context };
+        errorReport.AddError("Orchestrator", ValidationConstants.ErrorCodes.Orchestrator.DirectoryValidationCrashed, 
+            $"Directory validation crashed: {ex.Message}", ex.ToString());
+        return errorReport;
     }
 
     private string? GetManifestFileNameFromDll(string dllPath)

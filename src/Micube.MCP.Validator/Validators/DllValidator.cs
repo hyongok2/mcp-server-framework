@@ -4,6 +4,7 @@ using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.SDK.Models;
 using Micube.MCP.Validator.Models;
 using Micube.MCP.Validator.Services;
+using Micube.MCP.Validator.Constants;
 
 namespace Micube.MCP.Validator.Validators;
 
@@ -27,123 +28,161 @@ public class DllValidator : IValidator
         {
             var report = new ValidationReport { Context = context };
 
-            if (string.IsNullOrEmpty(context.DllPath))
+            if (!ValidateDllPath(context.DllPath, report, startTime))
             {
-                _logger?.LogError(Name, "DLL path not specified");
-                report.AddError("DLL", "DLL001", "DLL path is not specified");
-                report.Duration = DateTime.UtcNow - startTime;
                 return report;
             }
 
-            _logger?.LogInfo(Name, "Validating DLL", $"File: {Path.GetFileName(context.DllPath)}");
-
-            // 파일 존재 여부 확인
-            if (!File.Exists(context.DllPath))
+            var assembly = LoadAssembly(context.DllPath!, report, startTime);
+            if (assembly == null)
             {
-                _logger?.LogError(Name, "DLL file not found", context.DllPath);
-                report.AddError("DLL", "DLL002", $"DLL file not found: {context.DllPath}");
-                report.Duration = DateTime.UtcNow - startTime;
                 return report;
             }
 
-            report.Statistics.ValidatedFiles.Add(context.DllPath);
-            _logger?.LogInfo(Name, "DLL file exists", $"Path: {context.DllPath}");
-
-            // 어셈블리 로드
-            Assembly assembly;
-            try
+            var toolGroupTypes = GetToolGroupTypes(assembly, report, startTime);
+            if (toolGroupTypes == null)
             {
-                _logger?.LogInfo(Name, "Loading assembly", Path.GetFileName(context.DllPath));
-                assembly = Assembly.LoadFrom(context.DllPath);
-                
-                var assemblyName = assembly.GetName();
-                _logger?.LogInfo(Name, "Assembly loaded successfully", 
-                    $"Name: {assemblyName.Name}, Version: {assemblyName.Version}");
-                    
-                report.AddInfo("DLL", "DLL100", $"Successfully loaded assembly: {assemblyName.Name} v{assemblyName.Version}");
-            }
-            catch (BadImageFormatException ex)
-            {
-                _logger?.LogError(Name, "Invalid .NET assembly format", context.DllPath, ex);
-                report.AddError("DLL", "DLL003", "Invalid .NET assembly format",
-                    "The file is not a valid .NET assembly or has incompatible architecture");
-                report.Duration = DateTime.UtcNow - startTime;
-                return report;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(Name, "Failed to load assembly", context.DllPath, ex);
-                report.AddError("DLL", "DLL004", $"Failed to load assembly: {ex.Message}");
-                report.Duration = DateTime.UtcNow - startTime;
                 return report;
             }
 
-            // IMcpToolGroup 구현 찾기
-            List<Type> toolGroupTypes;
-            try
-            {
-                toolGroupTypes = assembly.GetTypes()
-                    .Where(t => typeof(IMcpToolGroup).IsAssignableFrom(t) && !t.IsAbstract)
-                    .ToList();
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                // 종속 DLL이 없어서 발생하는 오류는 경고로 처리
-                report.AddWarning("DLL", "DLL005", 
-                    $"Could not load all types from assembly: {ex.Message}",
-                    "This assembly may be a dependency DLL, not a MCP tool DLL");
-                report.Duration = DateTime.UtcNow - startTime;
-                return report;
-            }
-            catch (Exception ex)
-            {
-                // 기타 타입 로드 오류
-                report.AddWarning("DLL", "DLL006", 
-                    $"Failed to analyze assembly types: {ex.Message}",
-                    "This assembly may not be a MCP tool DLL");
-                report.Duration = DateTime.UtcNow - startTime;
-                return report;
-            }
-
-            if (toolGroupTypes.Count == 0)
-            {
-                report.AddWarning("DLL", "DLL010", "No IMcpToolGroup implementation found",
-                    "This assembly does not contain MCP tool implementations (may be a dependency DLL)");
-                report.Duration = DateTime.UtcNow - startTime;
-                return report;
-            }
-
-            // 각 ToolGroup 검증
-            foreach (var type in toolGroupTypes)
-            {
-                ValidateToolGroupType(type, report, context);
-            }
-
-            // 의존성 검증
+            ValidateToolGroups(toolGroupTypes, report, context);
             ValidateDependencies(assembly, report);
-
-            // SDK 버전 호환성 체크
             ValidateSdkCompatibility(assembly, report);
 
-            report.Duration = DateTime.UtcNow - startTime;
-            _logger?.LogValidationEnd(Name, context.DllPath, report.Duration);
-            _logger?.LogInfo(Name, "DLL validation completed", 
-                $"Issues: {report.Issues.Count}, Errors: {report.Issues.Count(i => i.Severity == IssueSeverity.Error)}");
+            CompleteValidation(report, startTime, context.DllPath!);
 
             return await Task.FromResult(report);
         }
         catch (Exception ex)
         {
-            var duration = DateTime.UtcNow - startTime;
-            _logger?.LogCritical(Name, "Unexpected error during DLL validation", 
-                $"DLL: {Path.GetFileName(context.DllPath ?? "unknown")}, Duration: {duration.TotalMilliseconds:F0}ms", ex);
-            
-            var errorReport = new ValidationReport { Context = context };
-            errorReport.AddError("DLL", "DLL999", $"Unexpected error during validation: {ex.Message}", ex.ToString());
-            errorReport.Duration = duration;
-            
-            return await Task.FromResult(errorReport);
+            return HandleValidationError(ex, context, startTime);
         }
+    }
+
+    private bool ValidateDllPath(string? dllPath, ValidationReport report, DateTime startTime)
+    {
+        if (string.IsNullOrEmpty(dllPath))
+        {
+            _logger?.LogError(Name, "DLL path not specified");
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.PathNotSpecified, "DLL path is not specified");
+            report.Duration = DateTime.UtcNow - startTime;
+            return false;
+        }
+
+        _logger?.LogInfo(Name, "Validating DLL", $"File: {Path.GetFileName(dllPath)}");
+
+        if (!File.Exists(dllPath))
+        {
+            _logger?.LogError(Name, "DLL file not found", dllPath);
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.FileNotFound, $"DLL file not found: {dllPath}");
+            report.Duration = DateTime.UtcNow - startTime;
+            return false;
+        }
+
+        report.Statistics.ValidatedFiles.Add(dllPath);
+        _logger?.LogInfo(Name, "DLL file exists", $"Path: {dllPath}");
+
+        return true;
+    }
+
+    private Assembly? LoadAssembly(string dllPath, ValidationReport report, DateTime startTime)
+    {
+        try
+        {
+            _logger?.LogInfo(Name, "Loading assembly", Path.GetFileName(dllPath));
+            var assembly = Assembly.LoadFrom(dllPath);
+            
+            var assemblyName = assembly.GetName();
+            _logger?.LogInfo(Name, "Assembly loaded successfully", 
+                $"Name: {assemblyName.Name}, Version: {assemblyName.Version}");
+                
+            report.AddInfo("DLL", ValidationConstants.ErrorCodes.Info.AssemblyLoaded, 
+                $"Successfully loaded assembly: {assemblyName.Name} v{assemblyName.Version}");
+
+            return assembly;
+        }
+        catch (BadImageFormatException ex)
+        {
+            _logger?.LogError(Name, "Invalid .NET assembly format", dllPath, ex);
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.InvalidAssemblyFormat, "Invalid .NET assembly format",
+                "The file is not a valid .NET assembly or has incompatible architecture");
+            report.Duration = DateTime.UtcNow - startTime;
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(Name, "Failed to load assembly", dllPath, ex);
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.LoadFailed, $"Failed to load assembly: {ex.Message}");
+            report.Duration = DateTime.UtcNow - startTime;
+            return null;
+        }
+    }
+
+    private List<Type>? GetToolGroupTypes(Assembly assembly, ValidationReport report, DateTime startTime)
+    {
+        try
+        {
+            var toolGroupTypes = assembly.GetTypes()
+                .Where(t => typeof(IMcpToolGroup).IsAssignableFrom(t) && !t.IsAbstract)
+                .ToList();
+
+            if (toolGroupTypes.Count == 0)
+            {
+                report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.NoToolGroupImplementation, 
+                    "No IMcpToolGroup implementation found",
+                    "This assembly does not contain MCP tool implementations (may be a dependency DLL)");
+                report.Duration = DateTime.UtcNow - startTime;
+                return null;
+            }
+
+            return toolGroupTypes;
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.TypeLoadWarning, 
+                $"Could not load all types from assembly: {ex.Message}",
+                "This assembly may be a dependency DLL, not a MCP tool DLL");
+            report.Duration = DateTime.UtcNow - startTime;
+            return null;
+        }
+        catch (Exception ex)
+        {
+            report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.AnalysisWarning, 
+                $"Failed to analyze assembly types: {ex.Message}",
+                "This assembly may not be a MCP tool DLL");
+            report.Duration = DateTime.UtcNow - startTime;
+            return null;
+        }
+    }
+
+    private void ValidateToolGroups(List<Type> toolGroupTypes, ValidationReport report, ValidationContext context)
+    {
+        foreach (var type in toolGroupTypes)
+        {
+            ValidateToolGroupType(type, report, context);
+        }
+    }
+
+    private void CompleteValidation(ValidationReport report, DateTime startTime, string dllPath)
+    {
+        report.Duration = DateTime.UtcNow - startTime;
+        _logger?.LogValidationEnd(Name, dllPath, report.Duration);
+        _logger?.LogInfo(Name, "DLL validation completed", 
+            $"Issues: {report.Issues.Count}, Errors: {report.Issues.Count(i => i.Severity == IssueSeverity.Error)}");
+    }
+
+    private ValidationReport HandleValidationError(Exception ex, ValidationContext context, DateTime startTime)
+    {
+        var duration = DateTime.UtcNow - startTime;
+        _logger?.LogCritical(Name, "Unexpected error during DLL validation", 
+            $"DLL: {Path.GetFileName(context.DllPath ?? "unknown")}, Duration: {duration.TotalMilliseconds:F0}ms", ex);
+        
+        var errorReport = new ValidationReport { Context = context };
+        errorReport.AddError("DLL", ValidationConstants.ErrorCodes.Dll.UnexpectedError, 
+            $"Unexpected error during validation: {ex.Message}", ex.ToString());
+        errorReport.Duration = duration;
+        
+        return errorReport;
     }
 
     private void ValidateToolGroupType(Type type, ValidationReport report, ValidationContext context)
@@ -154,7 +193,7 @@ public class DllValidator : IValidator
         var attr = type.GetCustomAttribute<McpToolGroupAttribute>();
         if (attr == null)
         {
-            report.AddError("DLL", "DLL020", 
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.MissingMcpToolGroupAttribute, 
                 $"Type '{typeName}' is missing [McpToolGroup] attribute",
                 "All IMcpToolGroup implementations must have the McpToolGroup attribute");
             return;
@@ -163,20 +202,20 @@ public class DllValidator : IValidator
         // Attribute 필수 속성 검증
         if (string.IsNullOrWhiteSpace(attr.GroupName))
         {
-            report.AddError("DLL", "DLL021", 
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.EmptyGroupName, 
                 $"Type '{typeName}': McpToolGroup.GroupName is empty");
         }
         else
         {
             // 메타데이터에 GroupName 저장
             context.Metadata[$"DLL.GroupName.{type.Name}"] = attr.GroupName;
-            report.AddInfo("DLL", "DLL101", 
+            report.AddInfo("DLL", ValidationConstants.ErrorCodes.Info.ToolGroupFound, 
                 $"Found tool group: '{attr.GroupName}' in type '{type.Name}'");
         }
 
         if (string.IsNullOrWhiteSpace(attr.ManifestPath))
         {
-            report.AddError("DLL", "DLL022", 
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.EmptyManifestPath, 
                 $"Type '{typeName}': McpToolGroup.ManifestPath is empty");
         }
 
@@ -184,7 +223,7 @@ public class DllValidator : IValidator
         var constructor = type.GetConstructor(new[] { typeof(IMcpLogger) });
         if (constructor == null)
         {
-            report.AddError("DLL", "DLL023", 
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.MissingRequiredConstructor, 
                 $"Type '{typeName}' is missing required constructor(IMcpLogger)",
                 "ToolGroup classes must have a public constructor that accepts IMcpLogger parameter");
         }
@@ -195,12 +234,12 @@ public class DllValidator : IValidator
         // BaseToolGroup 상속 확인 (선택사항)
         if (type.BaseType?.Name == "BaseToolGroup")
         {
-            report.AddInfo("DLL", "DLL102", 
+            report.AddInfo("DLL", ValidationConstants.ErrorCodes.Info.ExtendsBaseToolGroup, 
                 $"Type '{type.Name}' extends BaseToolGroup (recommended)");
         }
         else if (context.StrictMode)
         {
-            report.AddWarning("DLL", "DLL024",
+            report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.NotExtendingBaseToolGroup,
                 $"Type '{type.Name}' does not extend BaseToolGroup",
                 "Consider extending BaseToolGroup for standard implementations");
         }
@@ -208,63 +247,93 @@ public class DllValidator : IValidator
 
     private void ValidateToolMethods(Type type, ValidationReport report)
     {
-        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-        var toolMethods = methods.Where(m => m.GetCustomAttribute<McpToolAttribute>() != null).ToList();
+        var toolMethods = GetToolMethods(type);
 
         if (toolMethods.Count == 0)
         {
-            report.AddWarning("DLL", "DLL030", 
+            report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.NoMcpToolMethods, 
                 $"Type '{type.Name}' has no methods with [McpTool] attribute");
             return;
         }
 
+        ValidateToolMethodsCollection(toolMethods, type.Name, report);
+    }
+
+    private List<MethodInfo> GetToolMethods(Type type)
+    {
+        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        return methods.Where(m => m.GetCustomAttribute<McpToolAttribute>() != null).ToList();
+    }
+
+    private void ValidateToolMethodsCollection(List<MethodInfo> toolMethods, string typeName, ValidationReport report)
+    {
         var toolNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var method in toolMethods)
         {
-            var toolAttr = method.GetCustomAttribute<McpToolAttribute>()!;
-            var toolName = toolAttr.Name ?? method.Name;
+            ValidateSingleToolMethod(method, typeName, toolNames, report);
+        }
+    }
 
-            // 중복 이름 검사
-            if (!toolNames.Add(toolName))
-            {
-                report.AddError("DLL", "DLL031", 
-                    $"Duplicate tool name '{toolName}' in type '{type.Name}'");
-            }
+    private void ValidateSingleToolMethod(MethodInfo method, string typeName, HashSet<string> toolNames, ValidationReport report)
+    {
+        var toolAttr = method.GetCustomAttribute<McpToolAttribute>()!;
+        var toolName = toolAttr.Name ?? method.Name;
 
-            // 반환 타입 검증 - BaseToolGroup에서 모든 Task 타입을 처리할 수 있음
-            var returnType = method.ReturnType;
-            bool isValidReturnType = false;
+        ValidateToolNameUniqueness(toolName, typeName, toolNames, report);
+        ValidateToolMethodReturnType(method, report);
+        ValidateToolMethodParameters(method, report);
 
-            if (returnType == typeof(Task))
-            {
-                // Task (void) - 기본 작업 완료 반환
-                isValidReturnType = true;
-            }
-            else if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
-            {
-                // Task<T> - BaseToolGroup이 모든 타입을 ToolCallResult로 변환 가능
-                isValidReturnType = true;
-            }
+        report.AddInfo("DLL", ValidationConstants.ErrorCodes.Info.ToolMethodFound, 
+            $"Found tool method: '{toolName}' ({method.Name})");
+    }
 
-            if (!isValidReturnType)
-            {
-                report.AddError("DLL", "DLL032",
-                    $"Tool method '{method.Name}' has invalid return type",
-                    "Tool methods must return Task or Task<T>");
-            }
+    private void ValidateToolNameUniqueness(string toolName, string typeName, HashSet<string> toolNames, ValidationReport report)
+    {
+        if (!toolNames.Add(toolName))
+        {
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.DuplicateToolName, 
+                $"Duplicate tool name '{toolName}' in type '{typeName}'");
+        }
+    }
 
-            // 파라미터 검증
-            var parameters = method.GetParameters();
-            if (parameters.Length > 1)
-            {
-                report.AddWarning("DLL", "DLL033",
-                    $"Tool method '{method.Name}' has {parameters.Length} parameters",
-                    "Tool methods typically accept a single parameter object");
-            }
+    private void ValidateToolMethodReturnType(MethodInfo method, ValidationReport report)
+    {
+        var returnType = method.ReturnType;
+        var isValidReturnType = IsValidReturnType(returnType);
 
-            report.AddInfo("DLL", "DLL103", 
-                $"Found tool method: '{toolName}' ({method.Name})");
+        if (!isValidReturnType)
+        {
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.InvalidReturnType,
+                $"Tool method '{method.Name}' has invalid return type",
+                "Tool methods must return Task or Task<T>");
+        }
+    }
+
+    private static bool IsValidReturnType(Type returnType)
+    {
+        if (returnType == typeof(Task))
+        {
+            return true;
+        }
+
+        if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ValidateToolMethodParameters(MethodInfo method, ValidationReport report)
+    {
+        var parameters = method.GetParameters();
+        
+        if (parameters.Length > ValidationConstants.ValidationLimits.MaxToolMethodParameters)
+        {
+            report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.TooManyParameters,
+                $"Tool method '{method.Name}' has {parameters.Length} parameters",
+                "Tool methods typically accept a single parameter object");
         }
     }
 
@@ -274,68 +343,99 @@ public class DllValidator : IValidator
         {
             var referencedAssemblies = assembly.GetReferencedAssemblies();
             
-            // 필수 의존성 확인
-            var hasMcpSdk = referencedAssemblies.Any(a => a.Name == "Micube.MCP.SDK");
-            if (!hasMcpSdk)
-            {
-                report.AddError("DLL", "DLL040",
-                    "Missing reference to Micube.MCP.SDK",
-                    "The assembly must reference Micube.MCP.SDK");
-            }
-
-            // 추가 의존성 정보
-            var externalDeps = referencedAssemblies
-                .Where(a => !a.Name?.StartsWith("System") ?? false)
-                .Where(a => !a.Name?.StartsWith("Microsoft") ?? false)
-                .Where(a => a.Name != "Micube.MCP.SDK")
-                .ToList();
-
-            if (externalDeps.Count > 0)
-            {
-                var depList = string.Join(", ", externalDeps.Select(a => $"{a.Name} v{a.Version}"));
-                report.AddInfo("DLL", "DLL104", 
-                    $"External dependencies: {depList}");
-            }
+            ValidateRequiredDependencies(referencedAssemblies, report);
+            ReportExternalDependencies(referencedAssemblies, report);
         }
         catch (Exception ex)
         {
-            report.AddWarning("DLL", "DLL041",
+            report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.DependencyAnalysisFailed,
                 $"Could not analyze dependencies: {ex.Message}");
         }
+    }
+
+    private void ValidateRequiredDependencies(AssemblyName[] referencedAssemblies, ValidationReport report)
+    {
+        var hasMcpSdk = referencedAssemblies.Any(a => a.Name == ValidationConstants.AssemblyNames.MicubeMcpSdk);
+        
+        if (!hasMcpSdk)
+        {
+            report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.MissingSdkReference,
+                $"Missing reference to {ValidationConstants.AssemblyNames.MicubeMcpSdk}",
+                $"The assembly must reference {ValidationConstants.AssemblyNames.MicubeMcpSdk}");
+        }
+    }
+
+    private void ReportExternalDependencies(AssemblyName[] referencedAssemblies, ValidationReport report)
+    {
+        var externalDeps = GetExternalDependencies(referencedAssemblies);
+
+        if (externalDeps.Count > 0)
+        {
+            var depList = string.Join(", ", externalDeps.Select(a => $"{a.Name} v{a.Version}"));
+            report.AddInfo("DLL", ValidationConstants.ErrorCodes.Info.ExternalDependencies, 
+                $"External dependencies: {depList}");
+        }
+    }
+
+    private List<AssemblyName> GetExternalDependencies(AssemblyName[] referencedAssemblies)
+    {
+        return referencedAssemblies
+            .Where(a => !IsSystemOrMicrosoftAssembly(a))
+            .Where(a => a.Name != ValidationConstants.AssemblyNames.MicubeMcpSdk)
+            .ToList();
+    }
+
+    private static bool IsSystemOrMicrosoftAssembly(AssemblyName assemblyName)
+    {
+        return assemblyName.Name?.StartsWith(ValidationConstants.AssemblyNames.SystemPrefix) == true ||
+               assemblyName.Name?.StartsWith(ValidationConstants.AssemblyNames.MicrosoftPrefix) == true;
     }
 
     private void ValidateSdkCompatibility(Assembly assembly, ValidationReport report)
     {
         try
         {
-            var sdkReference = assembly.GetReferencedAssemblies()
-                .FirstOrDefault(a => a.Name == "Micube.MCP.SDK");
+            var sdkReference = GetSdkReference(assembly);
+            if (sdkReference == null) return;
 
-            if (sdkReference != null)
+            var currentSdkVersion = GetCurrentSdkVersion();
+            var referencedSdkVersion = sdkReference.Version;
+
+            if (currentSdkVersion != null && referencedSdkVersion != null)
             {
-                var currentSdkVersion = typeof(IMcpToolGroup).Assembly.GetName().Version;
-                var referencedSdkVersion = sdkReference.Version;
-
-                if (currentSdkVersion != null && referencedSdkVersion != null)
-                {
-                    if (referencedSdkVersion.Major != currentSdkVersion.Major)
-                    {
-                        report.AddWarning("DLL", "DLL050",
-                            $"SDK version mismatch - DLL uses v{referencedSdkVersion}, current is v{currentSdkVersion}",
-                            "Major version differences may cause compatibility issues");
-                    }
-                    else if (referencedSdkVersion < currentSdkVersion)
-                    {
-                        report.AddInfo("DLL", "DLL105",
-                            $"DLL uses older SDK version (v{referencedSdkVersion}), current is v{currentSdkVersion}");
-                    }
-                }
+                CheckVersionCompatibility(currentSdkVersion, referencedSdkVersion, report);
             }
         }
         catch (Exception ex)
         {
-            report.AddInfo("DLL", "DLL051",
+            report.AddInfo("DLL", ValidationConstants.ErrorCodes.Dll.SdkCompatibilityCheck,
                 $"Could not verify SDK compatibility: {ex.Message}");
+        }
+    }
+
+    private AssemblyName? GetSdkReference(Assembly assembly)
+    {
+        return assembly.GetReferencedAssemblies()
+            .FirstOrDefault(a => a.Name == ValidationConstants.AssemblyNames.MicubeMcpSdk);
+    }
+
+    private Version? GetCurrentSdkVersion()
+    {
+        return typeof(IMcpToolGroup).Assembly.GetName().Version;
+    }
+
+    private void CheckVersionCompatibility(Version currentVersion, Version referencedVersion, ValidationReport report)
+    {
+        if (referencedVersion.Major != currentVersion.Major)
+        {
+            report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.SdkVersionMismatch,
+                $"SDK version mismatch - DLL uses v{referencedVersion}, current is v{currentVersion}",
+                "Major version differences may cause compatibility issues");
+        }
+        else if (referencedVersion < currentVersion)
+        {
+            report.AddInfo("DLL", ValidationConstants.ErrorCodes.Info.SdkVersionInfo,
+                $"DLL uses older SDK version (v{referencedVersion}), current is v{currentVersion}");
         }
     }
 }
