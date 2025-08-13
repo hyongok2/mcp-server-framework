@@ -28,7 +28,7 @@ Docker를 사용한 MCP Server 배포는 **일관된 실행 환경**과 **손쉬
 # Use the official .NET runtime as a parent image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 5000
+EXPOSE 5555
 
 # Use the official .NET SDK as a build image
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -60,7 +60,7 @@ COPY --from=publish /app/publish .
 
 # Set environment variables
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ASPNETCORE_URLS=http://*:5000
+ENV ASPNETCORE_URLS=http://*:5555
 
 # Create non-root user for security
 RUN groupadd -r mcpuser && useradd -r -g mcpuser mcpuser
@@ -106,11 +106,11 @@ docker buildx build \
 # 기본 실행 (HTTP 모드)
 docker run -d \
   --name mcp-server \
-  -p 5000:5000 \
+  -p 5555:5555 \
   mcp-server:latest
 
 # 실행 확인
-curl http://localhost:5000/health
+curl http://localhost:5555/health
 ```
 
 ### **2. 볼륨 마운트 실행**
@@ -119,7 +119,7 @@ curl http://localhost:5000/health
 # 설정과 로그 디렉토리 마운트
 docker run -d \
   --name mcp-server \
-  -p 5000:5000 \
+  -p 5555:5555 \
   -v $(pwd)/docker/config:/app/config:ro \
   -v $(pwd)/docker/logs:/app/logs \
   -v $(pwd)/docker/tools:/app/tools:ro \
@@ -134,7 +134,7 @@ docker run -d \
 # 환경 변수로 설정 오버라이드
 docker run -d \
   --name mcp-server \
-  -p 5000:5000 \
+  -p 5555:5555 \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e Logging__MinLevel=Info \
   -e Features__EnableStdio=false \
@@ -159,7 +159,7 @@ services:
     container_name: mcp-server
     image: micube.mcp.server:1.0.0
     ports:
-      - "5000:5000"
+      - "5555:5555"
     volumes:
       # 설정 파일 마운트
       - ./config:/app/config:ro
@@ -173,9 +173,9 @@ services:
       - ./prompts:/app/prompts:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://*:5000
+      - ASPNETCORE_URLS=http://*:5555
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5555/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -219,7 +219,7 @@ services:
     container_name: mcp-server-dev
     image: micube.mcp.server:1.0.0
     ports:
-      - "5000:5000"
+      - "5555:5555"
     volumes:
       - ../src:/src  # 소스 코드 마운트
       - ./config:/app/config:ro
@@ -358,7 +358,7 @@ services:
   mcp-server:
     image: mcp-server:latest
     ports:
-      - "5000:5000"
+      - "5555:5555"
     volumes:
       - ./config:/app/config:ro
       - ./logs:/app/logs
@@ -370,7 +370,7 @@ services:
       - Features__EnableStdio=false
       - Features__EnableHttp=true
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5555/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -383,7 +383,7 @@ services:
 docker compose -f docker/http-compose.yml up -d
 
 # 다른 터미널에서 클라이언트 연결
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"TestClient","version":"1.0"},"capabilities":{}}}'
 ```
@@ -458,10 +458,10 @@ Docker Compose가 없는 환경에서만 사용:
 #### **호스트에서 연결**
 ```bash
 # 컨테이너 실행
-docker run -d -p 5000:5000 --name mcp-server mcp-server:latest
+docker run -d -p 5555:5555 --name mcp-server mcp-server:latest
 
 # 호스트에서 테스트
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -507,7 +507,7 @@ networks:
 // client/client.js
 const McpClient = require('./mcp-client');
 
-const client = new McpClient('http://mcp-server:5000'); // 컨테이너 이름 사용
+const client = new McpClient('http://mcp-server:5555'); // 컨테이너 이름 사용
 client.initialize().then(() => {
     console.log('Connected to MCP server');
 });
@@ -521,7 +521,7 @@ client.initialize().then(() => {
 docker network create mcp-bridge
 docker run -d --network mcp-bridge --name mcp-server mcp-server:latest
 docker run -it --network mcp-bridge alpine/curl \
-  curl http://mcp-server:5000/health
+  curl http://mcp-server:5555/health
 ```
 
 #### **Host 네트워크**
@@ -530,7 +530,7 @@ docker run -it --network mcp-bridge alpine/curl \
 docker run -d --network host --name mcp-server mcp-server:latest
 
 # localhost로 직접 접근 가능
-curl http://localhost:5000/health
+curl http://localhost:5555/health
 ```
 
 ## 🛡️ 보안 설정
@@ -554,7 +554,7 @@ docker run -d \
   --tmpfs /tmp \
   --tmpfs /var/tmp \
   -v $(pwd)/logs:/app/logs \
-  -p 5000:5000 \
+  -p 5555:5555 \
   mcp-server:latest
 ```
 
@@ -567,5 +567,5 @@ docker run -d \
   --memory=512m \
   --cpus=1.0 \
   --memory-swap=512m \
-  -p 5000:5000 \
+  -p 5555:5555 \
   mcp-server

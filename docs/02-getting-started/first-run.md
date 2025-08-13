@@ -14,7 +14,7 @@
 
 ### **HTTP 모드**  
 - 🌐 **웹 API 통신** (REST)
-- 🎯 **주 사용처**: 웹 애플리케이션, 브라우저, cURL 테스트
+- 🎯 **주 사용처**: 서버사이드 AI Agent, 웹 애플리케이션, 브라우저, cURL 테스트
 - 🔧 **편의성**: 표준 HTTP 도구로 테스트 가능
 - 📊 **모니터링**: 웹 브라우저로 상태 확인
 
@@ -49,7 +49,7 @@ Loaded tool group: Echo from /path/to/publish/tools/SampleTools.dll
 # Postman으로도 동일하게 테스트 가능 raw - Json 선택
 
 # 기본 헬스체크
-curl http://localhost:5000/health
+curl http://localhost:5555/health
 
 # 예상 응답
 {
@@ -62,7 +62,7 @@ curl http://localhost:5000/health
 ### **2. 상세 헬스체크**
 ```bash
 # 상세한 시스템 상태
-curl http://localhost:5000/health/detailed
+curl http://localhost:5555/health/detailed
 
 # 예상 응답
 {
@@ -97,7 +97,6 @@ curl http://localhost:5000/health/detailed
 
 #### **터미널 1: 서버 실행**
 ```bash
-cd publish
 dotnet Micube.MCP.Server.dll
 ```
 
@@ -121,7 +120,7 @@ echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"Echo_Echo"
 
 #### **1. 서버 초기화**
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -161,7 +160,7 @@ curl -X POST http://localhost:5000/mcp \
 
 #### **2. 도구 목록 조회**
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -198,7 +197,7 @@ curl -X POST http://localhost:5000/mcp \
 
 #### **3. Echo 도구 실행**
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -298,7 +297,7 @@ Console.Beep(freq, dur); // Windows에서만 동작
 ## 📱 웹 브라우저에서 확인
 
 ### **1. 헬스체크 페이지**
-브라우저에서 `http://localhost:5000/health` 접속
+브라우저에서 `http://localhost:5555/health` 접속
 ```json
 {
   "status": "healthy",
@@ -308,17 +307,8 @@ Console.Beep(freq, dur); // Windows에서만 동작
 ```
 
 ### **2. 상세 상태 페이지**
-브라우저에서 `http://localhost:5000/health/detailed` 접속하여 전체 시스템 상태 확인
+브라우저에서 `http://localhost:5555/health/detailed` 접속하여 전체 시스템 상태 확인
 
-## 🎯 성공 확인 체크리스트
-
-다음 모든 항목이 성공했다면 첫 실행이 완료된 것입니다:
-
-- [ ] 서버가 오류 없이 시작되었는가?
-- [ ] 헬스체크 응답이 "healthy"인가?
-- [ ] 도구 목록에 "Echo_Echo"가 표시되는가?
-- [ ] Echo 도구 실행이 성공하는가?
-- [ ] 로그 파일이 정상적으로 생성되는가?
 
 ## 🚀 다음 단계 준비
 
@@ -327,11 +317,6 @@ Console.Beep(freq, dur); // Windows에서만 동작
 1. **기본 사용법 학습**: [기본 사용법](basic-usage.md)에서 더 많은 명령어 실습
 2. **설정 최적화**: [Configuration](../03-configuration/README.md)에서 상세 설정 방법 학습
 3. **도구 개발**: [Development](../04-development/README.md)에서 커스텀 도구 개발 학습
-
-
-## 🎊 축하합니다!
-
-첫 번째 MCP 서버 실행을 성공적으로 완료하셨습니다! 이제 MCP 프로토콜을 통해 AI와 외부 시스템이 상호작용하는 것을 직접 경험해보셨습니다.
 
 ---
 

@@ -391,29 +391,10 @@ public class ToolContent
     [JsonProperty("text")]
     public string? Text { get; set; }
 
-    /// <summary>
-    /// 구조화된 데이터
-    /// </summary>
-    [JsonProperty("data")]
-    public object? Data { get; set; }
-
-    /// <summary>
-    /// MIME 타입
-    /// </summary>
-    [JsonProperty("mimeType")]
-    public string? MimeType { get; set; }
-
-    /// <summary>
-    /// JSON 스키마 (구조화된 데이터용)
-    /// </summary>
-    [JsonProperty("schema")]
-    public object? Schema { get; set; }
-
     // 생성자들
-    
     public ToolContent();
     public ToolContent(string type, string? text);
-    public ToolContent(object data, object? schema = null);
+
 }
 ```
 
@@ -423,7 +404,6 @@ public class ToolContent
 var contents = new List<ToolContent>
 {
     new ToolContent("text", "처리 결과"),
-    new ToolContent("code", "SELECT * FROM users;") { MimeType = "text/sql" },
     new ToolContent(new { status = "success", count = 10 })
 };
 

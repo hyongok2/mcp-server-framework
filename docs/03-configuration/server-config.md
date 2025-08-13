@@ -87,7 +87,7 @@ MCP Server Framework는 `config/appsettings.json` 파일을 통해 모든 설정
   "Kestrel": {
     "Endpoints": {
       "Http": {
-        "Url": "http://localhost:5000"
+        "Url": "http://0.0.0.0:5555"
       },
       "Https": {
         "Url": "https://localhost:5001",
@@ -114,10 +114,10 @@ MCP Server Framework는 `config/appsettings.json` 파일을 통해 모든 설정
 #### **환경별 설정 예시**
 ```json
 // 로컬 개발
-"Url": "http://localhost:5000"
+"Url": "http://localhost:5555"
 
 // Docker 컨테이너
-"Url": "http://0.0.0.0:5000" 
+"Url": "http://0.0.0.0:5555" 
 
 ```
 
@@ -316,7 +316,7 @@ prompts/
   "ToolGroups": { "Whitelist": ["*.dll"] },
   "Kestrel": {
     "Endpoints": {
-      "Http": { "Url": "http://localhost:5000" }
+      "Http": { "Url": "http://localhost:5555" }
     }
   }
 }
@@ -339,7 +339,7 @@ prompts/
   "Kestrel": {
     "Endpoints": {
       "Https": {
-        "Url": "https://0.0.0.0:443",
+        "Url": "https://0.0.0.0:5555",
         "Certificate": {
           "Path": "/etc/ssl/mcp-server.pfx",
           "Password": "${CERT_PASSWORD}"

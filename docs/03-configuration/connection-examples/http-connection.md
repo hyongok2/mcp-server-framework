@@ -36,7 +36,7 @@ HTTP 연결은 MCP Server Framework의 **확장성 있는 연결 방식**으로,
   "Kestrel": {
     "Endpoints": {
       "Http": {
-        "Url": "http://localhost:5000"
+        "Url": "http://localhost:5555"
       }
     }
   },
@@ -52,7 +52,7 @@ HTTP 연결은 MCP Server Framework의 **확장성 있는 연결 방식**으로,
   "Kestrel": {
     "Endpoints": {
       "Http": {
-        "Url": "http://localhost:5000"
+        "Url": "http://localhost:5555"
       },
       "Https": {
         "Url": "https://localhost:5001",
@@ -94,7 +94,7 @@ HTTP 연결은 MCP Server Framework의 **확장성 있는 연결 방식**으로,
 dotnet run
 
 # 헬스체크로 확인
-curl http://localhost:5000/health
+curl http://localhost:5555/health
 
 # 예상 응답
 {
@@ -103,242 +103,6 @@ curl http://localhost:5000/health
   "version": "0.1.0"
 }
 ```
-
-## 🔧 클라이언트 구현
-
-### **Python 클라이언트**
-
-#### **기본 HTTP 클라이언트**
-```python
-import requests
-import json
-from typing import Dict, Any, Optional, List
-
-class McpHttpClient:
-    def __init__(self, base_url: str = "http://localhost:5000"):
-        self.base_url = base_url
-        self.request_id = 0
-        self.is_initialized = False
-        self.session = requests.Session()
-        
-    def initialize(self) -> Dict[str, Any]:
-        """서버 초기화"""
-        response = self.send_request("initialize", {
-            "protocolVersion": "2025-06-18",
-            "clientInfo": {
-                "name": "Python HTTP Client",
-                "version": "1.0.0"
-            },
-            "capabilities": {}
-        })
-        
-        self.is_initialized = response.get("result") is not None
-        return response
-    
-    def send_request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """HTTP 요청 전송"""
-        self.request_id += 1
-        
-        request_data = {
-            "jsonrpc": "2.0",
-            "id": self.request_id,
-            "method": method,
-            "params": params or {}
-        }
-        
-        try:
-            response = self.session.post(
-                f"{self.base_url}/mcp",
-                json=request_data,
-                headers={"Content-Type": "application/json"},
-                timeout=30
-            )
-            response.raise_for_status()
-            return response.json()
-            
-        except requests.exceptions.RequestException as e:
-            raise Exception(f"Request failed: {e}")
-    
-    def list_tools(self) -> List[Dict[str, Any]]:
-        """도구 목록 조회"""
-        if not self.is_initialized:
-            raise Exception("Client not initialized")
-            
-        response = self.send_request("tools/list")
-        return response.get("result", {}).get("tools", [])
-    
-    def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
-        """도구 호출"""
-        if not self.is_initialized:
-            raise Exception("Client not initialized")
-            
-        response = self.send_request("tools/call", {
-            "name": tool_name,
-            "arguments": arguments
-        })
-        return response.get("result")
-    
-    def list_resources(self) -> List[Dict[str, Any]]:
-        """리소스 목록 조회"""
-        if not self.is_initialized:
-            raise Exception("Client not initialized")
-            
-        response = self.send_request("resources/list")
-        return response.get("result", {}).get("resources", [])
-    
-    def read_resource(self, uri: str) -> str:
-        """리소스 읽기"""
-        if not self.is_initialized:
-            raise Exception("Client not initialized")
-            
-        response = self.send_request("resources/read", {"uri": uri})
-        contents = response.get("result", {}).get("contents", [])
-        return contents[0].get("text", "") if contents else ""
-    
-    def list_prompts(self) -> List[Dict[str, Any]]:
-        """프롬프트 목록 조회"""
-        if not self.is_initialized:
-            raise Exception("Client not initialized")
-            
-        response = self.send_request("prompts/list")
-        return response.get("result", {}).get("prompts", [])
-    
-    def get_prompt(self, name: str, arguments: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """프롬프트 실행"""
-        if not self.is_initialized:
-            raise Exception("Client not initialized")
-            
-        response = self.send_request("prompts/get", {
-            "name": name,
-            "arguments": arguments or {}
-        })
-        return response.get("result", {})
-
-# 사용 예시
-def main():
-    client = McpHttpClient("http://localhost:5000")
-    
-    try:
-        # 초기화
-        init_response = client.initialize()
-        print("Initialized:", init_response)
-        
-        # 도구 목록 및 호출
-        tools = client.list_tools()
-        print(f"Found {len(tools)} tools")
-        
-        if tools:
-            echo_result = client.call_tool("Echo_Echo", {
-                "text": "Hello from Python!"
-            })
-            print("Echo result:", echo_result)
-        
-        # 리소스 목록 및 읽기
-        resources = client.list_resources()
-        print(f"Found {len(resources)} resources")
-        
-        if resources:
-            content = client.read_resource(resources[0]["uri"])
-            print("Resource content preview:", content[:100] + "...")
-        
-    except Exception as e:
-        print(f"Error: {e}")
-
-if __name__ == "__main__":
-    main()
-```
-
-#### **비동기 Python 클라이언트**
-```python
-import aiohttp
-import asyncio
-import json
-from typing import Dict, Any, Optional, List
-
-class AsyncMcpHttpClient:
-    def __init__(self, base_url: str = "http://localhost:5000"):
-        self.base_url = base_url
-        self.request_id = 0
-        self.is_initialized = False
-        self.session: Optional[aiohttp.ClientSession] = None
-    
-    async def __aenter__(self):
-        self.session = aiohttp.ClientSession()
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.session:
-            await self.session.close()
-    
-    async def initialize(self) -> Dict[str, Any]:
-        response = await self.send_request("initialize", {
-            "protocolVersion": "2025-06-18",
-            "clientInfo": {
-                "name": "Async Python HTTP Client",
-                "version": "1.0.0"
-            },
-            "capabilities": {}
-        })
-        
-        self.is_initialized = response.get("result") is not None
-        return response
-    
-    async def send_request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        if not self.session:
-            raise Exception("Session not initialized")
-        
-        self.request_id += 1
-        
-        request_data = {
-            "jsonrpc": "2.0",
-            "id": self.request_id,
-            "method": method,
-            "params": params or {}
-        }
-        
-        try:
-            async with self.session.post(
-                f"{self.base_url}/mcp",
-                json=request_data,
-                headers={"Content-Type": "application/json"},
-                timeout=aiohttp.ClientTimeout(total=30)
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
-                
-        except aiohttp.ClientError as e:
-            raise Exception(f"Request failed: {e}")
-    
-    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
-        if not self.is_initialized:
-            raise Exception("Client not initialized")
-            
-        response = await self.send_request("tools/call", {
-            "name": tool_name,
-            "arguments": arguments
-        })
-        return response.get("result")
-
-# 사용 예시
-async def async_example():
-    async with AsyncMcpHttpClient("http://localhost:5000") as client:
-        # 초기화
-        await client.initialize()
-        
-        # 병렬 도구 호출
-        tasks = [
-            client.call_tool("Echo_Echo", {"text": f"Message {i}"})
-            for i in range(5)
-        ]
-        
-        results = await asyncio.gather(*tasks)
-        for i, result in enumerate(results):
-            print(f"Result {i}: {result}")
-
-# 실행
-asyncio.run(async_example())
-```
-
 
 ---
 

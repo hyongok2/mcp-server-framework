@@ -34,9 +34,8 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
     image: mcp-server:latest
-    # image: micube.mcp.server:1.0.0
     # 또는 버전 태그
-    # image: mcp-server:1.0.0
+    # image: micube.mcp.server:1.0.0
 ```
 
 ---

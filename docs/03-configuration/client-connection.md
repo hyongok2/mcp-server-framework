@@ -135,119 +135,6 @@ ext install mcp-client
 }
 ```
 
-### **웹 애플리케이션 연결 (HTTP)**
-
-#### **1. JavaScript/TypeScript 클라이언트**
-```javascript
-class McpHttpClient {
-  constructor(baseUrl = 'http://localhost:5000') {
-    this.baseUrl = baseUrl;
-    this.sessionId = null;
-  }
-
-  async initialize() {
-    const response = await fetch(`${this.baseUrl}/mcp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'initialize',
-        params: {
-          protocolVersion: '2025-06-18',
-          clientInfo: {
-            name: 'Web App Client',
-            version: '1.0.0'
-          },
-          capabilities: {}
-        }
-      })
-    });
-    
-    const result = await response.json();
-    this.sessionId = result.id;
-    return result;
-  }
-
-  async callTool(toolName, arguments) {
-    const response = await fetch(`${this.baseUrl}/mcp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: toolName,
-          arguments: arguments
-        }
-      })
-    });
-    
-    return await response.json();
-  }
-}
-
-// 사용 예시
-const client = new McpHttpClient();
-await client.initialize();
-
-const result = await client.callTool('Echo_Echo', {
-  text: 'Hello from web app!'
-});
-console.log(result);
-```
-
-#### **2. Python 클라이언트**
-```python
-import requests
-import json
-
-class McpHttpClient:
-    def __init__(self, base_url="http://localhost:5000"):
-        self.base_url = base_url
-        self.session_id = None
-    
-    def initialize(self):
-        response = requests.post(f"{self.base_url}/mcp", json={
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2025-06-18",
-                "clientInfo": {
-                    "name": "Python Client",
-                    "version": "1.0.0"
-                },
-                "capabilities": {}
-            }
-        })
-        
-        result = response.json()
-        self.session_id = result.get("id")
-        return result
-    
-    def call_tool(self, tool_name, arguments):
-        response = requests.post(f"{self.base_url}/mcp", json={
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "tools/call",
-            "params": {
-                "name": tool_name,
-                "arguments": arguments
-            }
-        })
-        
-        return response.json()
-
-# 사용 예시
-client = McpHttpClient()
-client.initialize()
-
-result = client.call_tool("Echo_Echo", {"text": "Hello from Python!"})
-print(result)
-```
-
 ## 🔐 연결 보안 설정
 
 ### **STDIO 보안**
@@ -303,10 +190,10 @@ print(result)
 ### **방화벽 설정**
 ```bash
 # Linux - HTTP 포트 열기
-sudo ufw allow 5000/tcp
+sudo ufw allow 5555/tcp
 
 # Windows - 포트 열기
-netsh advfirewall firewall add rule name="MCP Server" dir=in action=allow protocol=TCP localport=5000
+netsh advfirewall firewall add rule name="MCP Server" dir=in action=allow protocol=TCP localport=5555
 ```
 
 ### **프록시 환경**
@@ -315,7 +202,7 @@ netsh advfirewall firewall add rule name="MCP Server" dir=in action=allow protoc
   "Kestrel": {
     "Endpoints": {
       "Http": {
-        "Url": "http://0.0.0.0:5000"
+        "Url": "http://0.0.0.0:5555"
       }
     }
   },
@@ -334,7 +221,7 @@ netsh advfirewall firewall add rule name="MCP Server" dir=in action=allow protoc
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"TestClient","version":"1.0"},"capabilities":{}}}' | dotnet run
 
 # HTTP 테스트  
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"TestClient","version":"1.0"},"capabilities":{}}}'
 ```
@@ -342,7 +229,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **2. 도구 호출 테스트**
 ```bash
 # HTTP로 Echo 도구 테스트
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -358,10 +245,10 @@ curl -X POST http://localhost:5000/mcp \
 ### **3. 헬스체크**
 ```bash
 # 서버 상태 확인
-curl http://localhost:5000/health
+curl http://localhost:5555/health
 
 # 상세 상태 확인
-curl http://localhost:5000/health/detailed
+curl http://localhost:5555/health/detailed
 ```
 
 ## 🔧 연결 문제 해결
@@ -384,8 +271,8 @@ curl http://localhost:5000/health/detailed
 ```bash
 # 증상: "Connection refused"
 # 해결: 포트 및 방화벽 확인
-netstat -tlnp | grep 5000
-telnet localhost 5000
+netstat -tlnp | grep 5555
+telnet localhost 5555
 ```
 
 #### **3. 인증서 오류**

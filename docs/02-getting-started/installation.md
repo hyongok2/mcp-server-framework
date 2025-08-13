@@ -55,9 +55,6 @@ mcp-server-framework/
 └── README.md
 ```
 
-* **주의** 반드시 ToolGroup DLL 파일은 연관된 모든 DLL 파일과 함께 tools폴더에 저장해야 합니다.
-
-
 ## 🔨 빌드 방법
 
 ### **수동 빌드**
@@ -80,6 +77,8 @@ SampleTools.dll(빌드 파일), echo.json
  - # mcp-server-framework\src\Micube.MCP.Server\bin\Debug\net8.0\tools 폴더내
 
 ```
+
+* **주의** 반드시 ToolGroup DLL 파일은 연관된 모든 DLL 파일과 함께 tools폴더에 저장해야 합니다.
 
 ## 🚀 다음 단계
 

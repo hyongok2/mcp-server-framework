@@ -24,7 +24,7 @@
 
 # 초기화
 
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -68,7 +68,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **2. 초기화 완료 알림 (권장)**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -83,7 +83,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **1. 사용 가능한 도구 목록 확인**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0", 
@@ -121,7 +121,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **2. Echo 도구 실행하기**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -157,7 +157,7 @@ curl -X POST http://localhost:5000/mcp \
 
 ```bash
 # 필수 매개변수 누락 테스트
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -188,7 +188,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **1. 사용 가능한 리소스 목록 확인**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -226,7 +226,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **2. 특정 리소스 내용 읽기**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -258,7 +258,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **3. 존재하지 않는 리소스 접근**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -288,7 +288,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **1. 사용 가능한 프롬프트 목록 확인**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -342,7 +342,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **2. 간단한 프롬프트 실행**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -380,7 +380,7 @@ curl -X POST http://localhost:5000/mcp \
 ### **3. 코드 리뷰 프롬프트 실행**
 
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -407,7 +407,7 @@ AI가 다음과 같은 작업을 수행한다고 가정해봅시다:
 
 #### **1단계: 프로젝트 문서 읽기**
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -421,7 +421,7 @@ curl -X POST http://localhost:5000/mcp \
 
 #### **2단계: 코드 리뷰 프롬프트 활용**
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -439,7 +439,7 @@ curl -X POST http://localhost:5000/mcp \
 
 #### **3단계: 결과 정리 (Echo 도구 활용)**
 ```bash
-curl -X POST http://localhost:5000/mcp \
+curl -X POST http://localhost:5555/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -472,25 +472,6 @@ curl -X POST http://localhost:5000/mcp \
 # 응답 전송  
 [2025-01-15 10:30:15] [INFO] [42] [HTTP] Response sent successfully
 ```
-
-## 🎯 실습 체크리스트
-
-다음 모든 항목을 성공적으로 실행해보세요:
-
-### **기본 기능**
-- [ ] MCP 서버 초기화
-- [ ] 도구 목록 조회
-- [ ] Echo 도구 실행
-- [ ] 리소스 목록 조회  
-- [ ] 리소스 내용 읽기
-- [ ] 프롬프트 목록 조회
-- [ ] 프롬프트 실행
-
-### **에러 처리**
-- [ ] 잘못된 매개변수로 도구 호출
-- [ ] 존재하지 않는 리소스 접근
-- [ ] 잘못된 JSON 형식 전송
-- [ ] 존재하지 않는 메서드 호출
 
 ## 🚀 다음 단계
 
