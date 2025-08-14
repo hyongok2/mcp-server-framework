@@ -38,12 +38,12 @@ app.Run();
 
 void RegisterServices(IServiceCollection services)
 {
-    builder.Services.Configure<LogFileOptions>(builder.Configuration.GetSection("Logging:File"));
-    builder.Services.Configure<ToolGroupOptions>(builder.Configuration.GetSection("ToolGroups"));
-    builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection("Features"));
-    builder.Services.Configure<LogOptions>(builder.Configuration.GetSection("Logging"));
-    builder.Services.Configure<ResourceOptions>(builder.Configuration.GetSection("Resources"));
-    builder.Services.Configure<PromptOptions>(builder.Configuration.GetSection("Prompts"));
+    services.Configure<LogFileOptions>(builder.Configuration.GetSection("Logging:File"));
+    services.Configure<ToolGroupOptions>(builder.Configuration.GetSection("ToolGroups"));
+    services.Configure<FeatureOptions>(builder.Configuration.GetSection("Features"));
+    services.Configure<LogOptions>(builder.Configuration.GetSection("Logging"));
+    services.Configure<ResourceOptions>(builder.Configuration.GetSection("Resources"));
+    services.Configure<PromptOptions>(builder.Configuration.GetSection("Prompts"));
 
     services.AddHostedService<SystemContextHostedService>();
     services.AddControllers();
