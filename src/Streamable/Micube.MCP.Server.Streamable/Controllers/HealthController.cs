@@ -1,8 +1,5 @@
-using System;
 using Microsoft.AspNetCore.Mvc;
-using Micube.MCP.Core.Session;
-using Micube.MCP.Core.Streamable.Dispatcher;
-using Micube.MCP.SDK.Interfaces;
+using Micube.MCP.Server.Streamable.Services.Health;
 
 namespace Micube.MCP.Server.Streamable.Controllers;
 
@@ -10,87 +7,37 @@ namespace Micube.MCP.Server.Streamable.Controllers;
 [Route("[controller]")]
 public class HealthController : ControllerBase
 {
-    private readonly IStreamableToolDispatcher _toolDispatcher;
-    private readonly ISessionState _sessionState;
-    private readonly IMcpLogger _logger;
+    private readonly IHealthAggregator _healthAggregator;
+    private readonly IHealthResponseFormatter _responseFormatter;
 
     public HealthController(
-        IStreamableToolDispatcher toolDispatcher,
-        ISessionState sessionState,
-        IMcpLogger logger)
+        IHealthAggregator healthAggregator,
+        IHealthResponseFormatter responseFormatter)
     {
-        _toolDispatcher = toolDispatcher;
-        _sessionState = sessionState;
-        _logger = logger;
+        _healthAggregator = healthAggregator;
+        _responseFormatter = responseFormatter;
     }
 
     /// <summary>
     /// 기본 헬스체크 - 서버 가동 상태만 확인
     /// </summary>
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get()
     {
-        return Ok(new
-        {
-            status = "healthy",
-            timestamp = DateTime.UtcNow,
-            version = "0.1.0"
-        });
+        var health = await _healthAggregator.GetBasicHealthAsync();
+        var response = _responseFormatter.FormatBasicResponse(health);
+        return Ok(response);
     }
 
     /// <summary>
     /// 상세 헬스체크 - 모든 컴포넌트 상태 확인
     /// </summary>
     [HttpGet("detailed")]
-    public IActionResult GetDetailed()
+    public async Task<IActionResult> GetDetailed()
     {
-        var healthData = new
-        {
-            status = "healthy",
-            timestamp = DateTime.UtcNow,
-            version = "0.1.0",
-            components = new
-            {
-                session = new
-                {
-                    status = _sessionState.IsInitialized ? "initialized" : "not-initialized",
-                    healthy = true
-                },
-                tools = CheckToolsHealthAsync(),
-            }
-        };
-
-        var allHealthy = CheckAllComponentsHealthy(healthData.components);
+        var health = await _healthAggregator.GetDetailedHealthAsync();
+        var response = _responseFormatter.FormatDetailedResponse(health);
         
-        return allHealthy ? Ok(healthData) : StatusCode(503, healthData);
-    }
-
-    private object CheckToolsHealthAsync()
-    {
-        try
-        {
-            var groups = _toolDispatcher.GetAvailableGroups();
-            return new
-            {
-                status = "healthy",
-                toolGroupsCount = groups.Count,
-                groups = groups
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Tools health check failed: {ex.Message}", ex);
-            return new
-            {
-                status = "unhealthy",
-                error = ex.Message
-            };
-        }
-    }
-
-    private static bool CheckAllComponentsHealthy(dynamic components)
-    {
-        return components.session.healthy &&
-               components.tools.status == "healthy" ;
+        return health.IsHealthy ? Ok(response) : StatusCode(503, response);
     }
 }

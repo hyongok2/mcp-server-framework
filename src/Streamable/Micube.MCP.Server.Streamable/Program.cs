@@ -18,6 +18,7 @@ using Micube.MCP.Core.Streamable.Dispatcher;
 using Micube.MCP.Core.Streamable.Loader;
 using Micube.MCP.Core.Streamable.Services;
 using Micube.MCP.Server.Streamable.Services;
+using Micube.MCP.Server.Streamable.Services.Health;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -145,6 +146,12 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<IHeartbeatService, HeartbeatService>();
     services.AddSingleton<ICancellationTokenBuilder, CancellationTokenBuilder>();
     services.AddSingleton<IStreamingResponseCoordinator, StreamingResponseCoordinator>();
+    
+    // Health services (SRP compliance)
+    services.AddSingleton<IComponentHealthChecker, SessionHealthChecker>();
+    services.AddSingleton<IComponentHealthChecker, ToolsHealthChecker>();
+    services.AddSingleton<IHealthAggregator, HealthAggregator>();
+    services.AddSingleton<IHealthResponseFormatter, HealthResponseFormatter>();
 }
 
 public partial class Program { }
