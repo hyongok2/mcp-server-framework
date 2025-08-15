@@ -67,6 +67,7 @@ void RegisterServices(IServiceCollection services)
     services.Configure<StreamableServerOptions>(builder.Configuration.GetSection(StreamableServerOptions.SectionName));
     services.Configure<LogFileOptions>(builder.Configuration.GetSection("Logging:File"));
     services.Configure<LogOptions>(builder.Configuration.GetSection("Logging"));
+    services.Configure<ToolGroupOptions>(builder.Configuration.GetSection("ToolGroups"));
 
     // Add controllers and API exploration
     services.AddControllers();

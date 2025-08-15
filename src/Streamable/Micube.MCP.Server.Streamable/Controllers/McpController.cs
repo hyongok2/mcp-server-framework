@@ -13,12 +13,12 @@ namespace Micube.MCP.Server.Streamable.Controllers;
 [Route("[controller]")]
 public class McpController : ControllerBase
 {
-    private readonly StreamingMessageDispatcher _dispatcher;
+    private readonly IStreamingMessageDispatcher _dispatcher;
     private readonly IMcpLogger _logger;
     private readonly IOptions<StreamableServerOptions> _options;
 
     public McpController(
-        StreamingMessageDispatcher dispatcher,
+        IStreamingMessageDispatcher dispatcher,
         IMcpLogger logger,
         IOptions<StreamableServerOptions> options)
     {
@@ -34,6 +34,8 @@ public class McpController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> HandleMcp([FromBody] McpMessage message)
     {
+        var messageJson = System.Text.Json.JsonSerializer.Serialize(message);
+        _logger.LogInfo($"[HTTP] Received message: {messageJson}");
         try
         {
             // Server determines streaming purely based on method capabilities
@@ -122,7 +124,7 @@ public class McpController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error handling streaming request",ex);
+            _logger.LogError("Error handling streaming request", ex);
             var errorChunk = new StreamChunk
             {
                 Type = StreamChunkType.Error,

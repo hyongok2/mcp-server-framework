@@ -1,0 +1,87 @@
+{
+  "GroupName": "SimpleStreamableDemo",
+  "Version": "1.0.0",
+  "Description": "Simple demonstration of streamable MCP tools with both streaming and non-streaming capabilities",
+  "Author": "MCP Framework Team",
+  "Tools": [
+    {
+      "Name": "simple_echo",
+      "Description": "Regular (non-streaming) echo tool that returns the input text with timestamp",
+      "Parameters": [
+        {
+          "Name": "text",
+          "Type": "string",
+          "Required": false,
+          "Description": "Text to echo back. If not provided, defaults to 'Hello Streamable World!'"
+        }
+      ]
+    },
+    {
+      "Name": "simple_count",
+      "Description": "Non-streaming counter that generates a list of numbers with timestamps",
+      "Parameters": [
+        {
+          "Name": "count",
+          "Type": "int",
+          "Required": false,
+          "Description": "Number of items to generate (1-100). Default is 5."
+        }
+      ],
+      "StructuredOutput": true,
+      "OutputSchema": {
+        "type": "object",
+        "properties": {
+          "numbers": {
+            "type": "array",
+            "description": "Generated numbers with timestamps",
+            "items": {
+              "type": "object",
+              "properties": {
+                "number": { "type": "int" },
+                "timestamp": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "Name": "stream_count",
+      "Description": "Streaming counter that emits numbers one by one with progress updates",
+      "Parameters": [
+        {
+          "Name": "count",
+          "Type": "int",
+          "Required": false,
+          "Description": "Number of items to stream (1-100). Default is 10."
+        },
+        {
+          "Name": "delay",
+          "Type": "int",
+          "Required": false,
+          "Description": "Delay in milliseconds between each number (0-5000). Default is 500ms."
+        }
+      ],
+      "Streaming": true
+    },
+    {
+      "Name": "stream_text",
+      "Description": "Streaming text generator that emits text word by word with progress",
+      "Parameters": [
+        {
+          "Name": "text",
+          "Type": "string",
+          "Required": false,
+          "Description": "Text to stream word by word. Default is 'Hello from streaming world!'"
+        }
+      ],
+      "Streaming": true
+    }
+  ],
+  "Config": {
+    "enabled": true,
+    "maxConcurrentExecutions": 10,
+    "timeoutSeconds": 30,
+    "logLevel": "Info"
+  }
+}

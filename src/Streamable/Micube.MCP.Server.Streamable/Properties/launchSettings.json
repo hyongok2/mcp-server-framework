@@ -1,13 +1,13 @@
 ﻿{
   "profiles": {
-    "Streamable.MCP.Server": {
+    "Micube.MCP.Server.Streamable": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "launchUrl": "",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:55001;http://localhost:55000"
+      "applicationUrl": "https://localhost:60223;http://localhost:60224"
     },
   }
 }
