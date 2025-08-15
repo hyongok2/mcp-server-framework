@@ -1,6 +1,6 @@
 using Micube.MCP.SDK.Streamable.Models;
 
-namespace Micube.MCP.Core.Streamable.Services;
+namespace Micube.MCP.Core.Streamable.Services.Handler;
 
 public interface IHandlerErrorChunkFactory
 {

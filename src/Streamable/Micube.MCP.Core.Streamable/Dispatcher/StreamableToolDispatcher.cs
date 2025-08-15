@@ -1,33 +1,31 @@
-using Micube.MCP.Core.Loader;
 using Micube.MCP.Core.MetaData;
-using Micube.MCP.Core.Models;
-using Micube.MCP.Core.Streamable.Models;
-using Micube.MCP.SDK.Abstracts;
-using Micube.MCP.SDK.Interfaces;
-using Micube.MCP.SDK.Models;
+using Micube.MCP.Core.Services.Tool;
+using Micube.MCP.Core.Streamable.Services.Tool;
 using Micube.MCP.SDK.Streamable.Models;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Micube.MCP.Core.Streamable.Dispatcher;
 
 /// <summary>
-/// Service to load and dispatch streamable tools
+/// Service to coordinate and dispatch streamable tools
 /// </summary>
 public class StreamableToolDispatcher : IStreamableToolDispatcher
 {
-    private readonly IMcpLogger _logger;
-    private readonly Dictionary<string, LoadedStreamableToolGroup> _groupMap;
+    private readonly IToolNameParser _toolNameParser;
+    private readonly IToolGroupRegistry _toolGroupRegistry;
+    private readonly IToolDispatcherErrorChunkFactory _errorChunkFactory;
+    private readonly IToolExecutionCoordinator _executionCoordinator;
 
     public StreamableToolDispatcher(
-        IEnumerable<LoadedStreamableToolGroup> loadedGroups,
-        IMcpLogger logger)
+        IToolNameParser toolNameParser,
+        IToolGroupRegistry toolGroupRegistry,
+        IToolDispatcherErrorChunkFactory errorChunkFactory,
+        IToolExecutionCoordinator executionCoordinator)
     {
-        _logger = logger;
-        _groupMap = loadedGroups.ToDictionary(
-            g => g.GroupName,
-            g => g,
-            StringComparer.OrdinalIgnoreCase);
+        _toolNameParser = toolNameParser;
+        _toolGroupRegistry = toolGroupRegistry;
+        _errorChunkFactory = errorChunkFactory;
+        _executionCoordinator = executionCoordinator;
     }
 
     /// <summary>
@@ -38,43 +36,25 @@ public class StreamableToolDispatcher : IStreamableToolDispatcher
         Dictionary<string, object> parameters,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Parse the full tool name (format: "GroupName.ToolName")
-        var parts = fullToolName.Split('_',2);
-        if (parts.Length != 2)
+        // Parse tool name
+        var parseResult = _toolNameParser.ParseToolName(fullToolName);
+        if (!parseResult.IsValid)
         {
-            yield return new StreamChunk
-            {
-                Type = StreamChunkType.Error,
-                Content = $"Invalid tool name format: '{fullToolName}'. Expected 'GroupName_ToolName'",
-                IsFinal = true,
-                SequenceNumber = 1,
-                Timestamp = DateTime.UtcNow
-            };
+            yield return _errorChunkFactory.CreateToolNameParseErrorChunk(parseResult.ErrorMessage!);
             yield break;
         }
 
-        var groupName = parts[0];
-        var toolName = parts[1];
-
-        // Find the tool group
-        if (!_groupMap.TryGetValue(groupName, out var loadedGroup))
+        // Find tool group
+        var groupResult = _toolGroupRegistry.FindGroup(parseResult.GroupName);
+        if (!groupResult.Found)
         {
-            yield return new StreamChunk
-            {
-                Type = StreamChunkType.Error,
-                Content = $"Tool group '{groupName}' not found",
-                IsFinal = true,
-                SequenceNumber = 1,
-                Timestamp = DateTime.UtcNow
-            };
+            yield return _errorChunkFactory.CreateToolGroupNotFoundChunk(parseResult.GroupName);
             yield break;
         }
 
-        // Log the invocation
-        _logger.LogDebug($"Dispatching streamable tool: {fullToolName}");
-
-        // Invoke the tool with streaming
-        await foreach (var chunk in loadedGroup.GroupInstance.InvokeStreamAsync(toolName, parameters, cancellationToken))
+        // Execute tool
+        await foreach (var chunk in _executionCoordinator.ExecuteToolStreamAsync(
+            groupResult.Group!, parseResult.ToolName, parameters, cancellationToken))
         {
             yield return chunk;
         }
@@ -85,7 +65,7 @@ public class StreamableToolDispatcher : IStreamableToolDispatcher
     /// </summary>
     public List<string> GetAvailableGroups()
     {
-        return _groupMap.Keys.ToList();
+        return _toolGroupRegistry.GetAvailableGroups();
     }
 
     /// <summary>
@@ -93,10 +73,6 @@ public class StreamableToolDispatcher : IStreamableToolDispatcher
     /// </summary>
     public ToolGroupMetadata? GetGroupMetadata(string groupName)
     {
-        if (_groupMap.TryGetValue(groupName, out var loadedGroup))
-        {
-            return loadedGroup.Metadata;
-        }
-        return null;
+        return _toolGroupRegistry.GetGroupMetadata(groupName);
     }
 }

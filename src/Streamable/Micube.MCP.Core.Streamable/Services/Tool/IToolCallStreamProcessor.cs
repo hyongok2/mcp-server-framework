@@ -3,7 +3,7 @@ using Micube.MCP.Core.Models;
 using Micube.MCP.SDK.Models;
 using Micube.MCP.SDK.Streamable.Models;
 
-namespace Micube.MCP.Core.Streamable.Services;
+namespace Micube.MCP.Core.Streamable.Services.Tool;
 
 public interface IToolCallStreamProcessor
 {

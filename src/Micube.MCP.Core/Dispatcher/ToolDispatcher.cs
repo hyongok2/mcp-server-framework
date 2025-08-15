@@ -1,6 +1,7 @@
 using System;
 using Micube.MCP.Core.MetaData;
 using Micube.MCP.Core.Models;
+using Micube.MCP.Core.Services.Tool;
 using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.SDK.Models;
 
@@ -8,26 +9,32 @@ namespace Micube.MCP.Core.Dispatcher;
 
 public class ToolDispatcher : IToolDispatcher
 {
+    private readonly IToolNameParser _toolNameParser;
     private readonly Dictionary<string, LoadedToolGroup> _groupMap;
     private readonly IMcpLogger _logger;
 
-    public ToolDispatcher(IEnumerable<LoadedToolGroup> loadedGroups, IMcpLogger logger)
+    public ToolDispatcher(IEnumerable<LoadedToolGroup> loadedGroups, IMcpLogger logger, IToolNameParser toolNameParser)
     {
         _logger = logger;
         _groupMap = loadedGroups.ToDictionary(
             g => g.GroupName,
             g => g,
             StringComparer.OrdinalIgnoreCase);
+        _toolNameParser = toolNameParser;
     }
 
     public async Task<ToolCallResult> InvokeAsync(string fullToolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
     {
-        var parts = fullToolName.Split('_', 2);
-        if (parts.Length != 2)
-            return ToolCallResult.Fail("Invalid tool name format. Expected 'GroupName_ToolName'.");
-
-        var groupName = parts[0];
-        var toolName = parts[1];
+        // Parse tool name
+        var parseResult = _toolNameParser.ParseToolName(fullToolName);
+        if (!parseResult.IsValid)
+        {
+            _logger.LogError($"Invalid tool name format: {fullToolName}");
+            return ToolCallResult.Fail("Invalid tool name format: {fullToolName}");
+        }
+        
+        var groupName = parseResult.GroupName;
+        var toolName = parseResult.ToolName;
 
         if (!_groupMap.TryGetValue(groupName, out var group))
         {

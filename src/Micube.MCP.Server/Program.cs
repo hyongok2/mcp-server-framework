@@ -9,6 +9,7 @@ using Micube.MCP.Core.Loader;
 using Micube.MCP.Core.Logging;
 using Micube.MCP.Core.Options;
 using Micube.MCP.Core.Services;
+using Micube.MCP.Core.Services.Tool;
 using Micube.MCP.Core.Session;
 using Micube.MCP.Core.Validation;
 using Micube.MCP.SDK.Interfaces;
@@ -103,10 +104,13 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<IMethodHandler, PromptsListHandler>();
     services.AddSingleton<IMethodHandler, PromptsGetHandler>();
 
+    services.AddSingleton<IToolNameParser, ToolNameParser>();
+
     services.AddSingleton<IToolQueryService, ToolQueryService>();
     services.AddSingleton<IToolDispatcher>(sp =>
     {
         var logger = sp.GetRequiredService<IMcpLogger>();
+        var toolNameParser = sp.GetRequiredService<IToolNameParser>();
         var toolOptions = sp.GetRequiredService<IOptions<ToolGroupOptions>>().Value;
 
         var baseDir = AppContext.BaseDirectory;
@@ -115,7 +119,7 @@ void RegisterServices(IServiceCollection services)
         var loader = new ToolGroupLoader(logger);
         var groups = loader.LoadFromDirectory(resolvedPath, toolOptions.Whitelist.ToArray());
 
-        return new ToolDispatcher(groups, logger);
+        return new ToolDispatcher(groups, logger,toolNameParser);
     });
     services.AddSingleton<IMcpMessageDispatcher, McpMessageDispatcher>();
 

@@ -4,7 +4,7 @@ using Micube.MCP.Core.Models;
 using Micube.MCP.Core.Services;
 using Micube.MCP.Core.Streamable.Dispatcher;
 
-namespace Micube.MCP.Core.Streamable.Services;
+namespace Micube.MCP.Core.Streamable.Services.Tool;
 
 public class StreamableToolQueryService : IToolQueryService
 {

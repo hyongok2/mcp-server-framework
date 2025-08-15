@@ -1,7 +1,7 @@
 using Micube.MCP.SDK.Models;
 using Micube.MCP.SDK.Streamable.Models;
 
-namespace Micube.MCP.Core.Streamable.Services;
+namespace Micube.MCP.Core.Streamable.Services.Handler;
 
 public class McpResponseWrapper : IMcpResponseWrapper
 {

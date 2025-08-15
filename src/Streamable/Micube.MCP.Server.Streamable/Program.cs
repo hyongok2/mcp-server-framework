@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
-using Micube.MCP.Core.Dispatcher;
 using Micube.MCP.Core.Handlers;
 using Micube.MCP.Core.Handlers.Core;
 using Micube.MCP.Core.Handlers.Tools;
-using Micube.MCP.Core.Loader;
 using Micube.MCP.Core.Logging;
 using Micube.MCP.Core.Options;
 using Micube.MCP.Core.Services;
@@ -16,9 +13,14 @@ using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.Server.Streamable.Options;
 using Micube.MCP.Core.Streamable.Dispatcher;
 using Micube.MCP.Core.Streamable.Loader;
-using Micube.MCP.Core.Streamable.Services;
+using Micube.MCP.Core.Streamable.Models;
+using Micube.MCP.Core.Streamable.Services.Dispatcher;
+using Micube.MCP.Core.Streamable.Services.Handler;
+using Micube.MCP.Core.Streamable.Services.Tool;
+using Micube.MCP.Core.Streamable.Services.Streaming;
 using Micube.MCP.Server.Streamable.Services;
 using Micube.MCP.Server.Streamable.Services.Health;
+using Micube.MCP.Core.Services.Tool;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -123,7 +125,8 @@ void RegisterServices(IServiceCollection services)
     // Replace with stream-compatible tools/call handler
     services.AddSingleton<IMethodHandler, ToolsCallStreamHandler>();
 
-    services.AddSingleton<IStreamableToolDispatcher>(sp =>
+    // Tool group loading (creates the loaded groups)
+    services.AddSingleton<IEnumerable<LoadedStreamableToolGroup>>(sp =>
     {
         var logger = sp.GetRequiredService<IMcpLogger>();
         var toolOptions = sp.GetRequiredService<IOptions<ToolGroupOptions>>().Value;
@@ -132,10 +135,17 @@ void RegisterServices(IServiceCollection services)
         var resolvedPath = Path.GetFullPath(Path.Combine(baseDir, toolOptions.Directory));
 
         var loader = new StreamableToolGroupLoader(logger);
-        var groups = loader.LoadFromDirectory(resolvedPath, toolOptions.Whitelist.ToArray());
-
-        return new StreamableToolDispatcher(groups, logger);
+        return loader.LoadFromDirectory(resolvedPath, toolOptions.Whitelist.ToArray());
     });
+
+    // Tool dispatcher services (SRP compliance)
+    services.AddSingleton<IToolNameParser, ToolNameParser>();
+    services.AddSingleton<IToolGroupRegistry, ToolGroupRegistry>();
+    services.AddSingleton<IToolDispatcherErrorChunkFactory, ToolDispatcherErrorChunkFactory>();
+    services.AddSingleton<IToolExecutionCoordinator, ToolExecutionCoordinator>();
+    
+    // Main dispatcher (orchestrator only)
+    services.AddSingleton<IStreamableToolDispatcher, StreamableToolDispatcher>();
 
     // Streaming services
     services.AddSingleton<IStreamingMessageDispatcher, StreamingMessageDispatcher>();
@@ -158,6 +168,13 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<IHandlerErrorChunkFactory, HandlerErrorChunkFactory>();
     services.AddSingleton<IMcpResponseWrapper, McpResponseWrapper>();
     services.AddSingleton<IToolCallStreamProcessor, ToolCallStreamProcessor>();
+    
+    // Dispatcher services (SRP compliance)
+    services.AddSingleton<IDispatcherMessageValidator, DispatcherMessageValidator>();
+    services.AddSingleton<IHandlerRegistry, HandlerRegistry>();
+    services.AddSingleton<ISessionValidator, SessionValidator>();
+    services.AddSingleton<IStreamExecutionCoordinator, StreamExecutionCoordinator>();
+    services.AddSingleton<IDispatcherErrorHandler, DispatcherErrorHandler>();
 }
 
 public partial class Program { }

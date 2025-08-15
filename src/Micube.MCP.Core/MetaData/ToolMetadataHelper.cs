@@ -1,6 +1,7 @@
 using System;
 using Micube.MCP.Core.MetaData;
 using Micube.MCP.Core.Models;
+using Micube.MCP.Core.Utils;
 
 namespace Micube.MCP.Core.MetaData;
 
@@ -10,7 +11,7 @@ public static class ToolMetadataHelper
     {
         return metadata.Tools.Select(t => new McpToolInfo
         {
-            Name = $"{metadata.GroupName}_{t.Name}",
+            Name = $"{metadata.GroupName}{ToolConstants.NameSeparator}{t.Name}",
             Description = t.Description,
             InputSchema = ConvertToJsonSchema(t)
         }).ToList();    

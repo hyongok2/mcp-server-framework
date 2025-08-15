@@ -1,7 +1,7 @@
 using Micube.MCP.Core.Models;
 using Micube.MCP.SDK.Models;
 
-namespace Micube.MCP.Core.Streamable.Services;
+namespace Micube.MCP.Core.Streamable.Services.Tool;
 
 public interface IToolCallRequestParser
 {

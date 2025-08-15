@@ -1,10 +1,11 @@
 using System.Runtime.CompilerServices;
 using Micube.MCP.Core.Models;
 using Micube.MCP.Core.Streamable.Dispatcher;
+using Micube.MCP.Core.Streamable.Services.Handler;
 using Micube.MCP.SDK.Models;
 using Micube.MCP.SDK.Streamable.Models;
 
-namespace Micube.MCP.Core.Streamable.Services;
+namespace Micube.MCP.Core.Streamable.Services.Tool;
 
 public class ToolCallStreamProcessor : IToolCallStreamProcessor
 {

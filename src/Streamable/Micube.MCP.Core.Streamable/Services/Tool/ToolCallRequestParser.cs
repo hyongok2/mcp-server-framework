@@ -3,7 +3,7 @@ using Micube.MCP.SDK.Exceptions;
 using Micube.MCP.SDK.Models;
 using Newtonsoft.Json;
 
-namespace Micube.MCP.Core.Streamable.Services;
+namespace Micube.MCP.Core.Streamable.Services.Tool;
 
 public class ToolCallRequestParser : IToolCallRequestParser
 {
