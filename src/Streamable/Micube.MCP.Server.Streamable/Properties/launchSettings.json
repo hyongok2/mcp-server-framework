@@ -1,0 +1,21 @@
+﻿{
+  "profiles": {
+    "Streamable.MCP.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:5001;http://localhost:5000"
+    },
+    "Streamable.MCP.Server.Production": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      },
+      "applicationUrl": "http://localhost:8080"
+    }
+  }
+}

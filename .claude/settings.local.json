@@ -32,9 +32,14 @@
       "Bash(../bin/Release/net8.0/win-x64/publish/mcp-validator.exe)",
       "Bash(dotnet build:*)",
       "Bash(mcp-validator.exe:*)",
-      "Bash(./mcp-validator.exe --version)"
+      "Bash(./mcp-validator.exe --version)",
+      "WebSearch",
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "defaultMode": "acceptEdits"
   }
 }

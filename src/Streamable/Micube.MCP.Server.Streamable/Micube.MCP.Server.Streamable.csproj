@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.15" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Micube.MCP.Core\Micube.MCP.Core.csproj" />
+    <ProjectReference Include="..\..\Micube.MCP.SDK\Micube.MCP.SDK.csproj" />
+    <ProjectReference Include="..\Micube.MCP.Core.Streamable\Micube.MCP.Core.Streamable.csproj" />
+    <ProjectReference Include="..\Micube.MCP.SDK.Streamable\Micube.MCP.SDK.Streamable.csproj" />
+  </ItemGroup>
+
+</Project>
