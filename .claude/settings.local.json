@@ -40,10 +40,18 @@
       "Bash(copy:*)",
       "WebFetch(domain:spec.modelcontextprotocol.io)",
       "WebFetch(domain:modelcontextprotocol.io)",
-      "WebFetch(domain:blog.cloudflare.com)"
+      "WebFetch(domain:blog.cloudflare.com)",
+      "Bash(./mcp-validator.exe --streaming)",
+      "Bash(./mcp-validator-new.exe --streaming)",
+      "Bash(./mcp-validator-final.exe --help)",
+      "Bash(./mcp-validator-final.exe)"
     ],
     "deny": [],
     "ask": [],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "C:\\c\\src\\work\\ai\\mcp-server-framework\\src",
+      "C:\\c\\src\\work\\ai\\mcp-server-framework"
+    ]
   }
 }

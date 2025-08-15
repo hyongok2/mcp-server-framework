@@ -28,6 +28,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Micube.MCP.Core\Micube.MCP.Core.csproj" />
     <ProjectReference Include="..\Micube.MCP.SDK\Micube.MCP.SDK.csproj" />
+    <ProjectReference Include="..\Streamable\Micube.MCP.SDK.Streamable\Micube.MCP.SDK.Streamable.csproj" />
+    <ProjectReference Include="..\Streamable\Micube.MCP.Core.Streamable\Micube.MCP.Core.Streamable.csproj" />
   </ItemGroup>
 
 </Project>

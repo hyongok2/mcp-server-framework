@@ -29,10 +29,13 @@ class Program
             _logger = new FileLogger(logDir);
             _logger.LogInfo("Program", ValidationConstants.Messages.ApplicationStarted, $"Args: [{string.Join(", ", args)}]");
 
-            // 단순한 인자 처리
-            if (args.Length > 0)
+            // 인자 처리
+            var enableStreaming = false;
+            string? serverUrl = null;
+            
+            for (int i = 0; i < args.Length; i++)
             {
-                var arg = args[0].ToLowerInvariant();
+                var arg = args[i].ToLowerInvariant();
                 _logger.LogInfo("Program", "Processing argument", arg);
                 
                 if (arg == "--help" || arg == "-h" || arg == "help")
@@ -47,11 +50,22 @@ class Program
                     _logger.LogInfo("Program", ValidationConstants.Messages.VersionDisplayed, $"Exit code: {exitCode}");
                     return exitCode;
                 }
+                if (arg == "--streaming" || arg == "-s")
+                {
+                    enableStreaming = true;
+                    _logger.LogInfo("Program", "Streaming validation enabled", "Will include streaming validators");
+                }
+                if (arg == "--server-url" && i + 1 < args.Length)
+                {
+                    serverUrl = args[++i];
+                    _logger.LogInfo("Program", "Server URL specified", serverUrl);
+                }
             }
 
             // 기본 동작: 현재 디렉토리의 모든 MCP 툴 검증
-            _logger.LogInfo("Program", "Starting validation", "Running main validation process");
-            exitCode = await RunValidation();
+            _logger.LogInfo("Program", "Starting validation", 
+                $"Running main validation process (Streaming: {enableStreaming})");
+            exitCode = await RunValidation(enableStreaming, serverUrl);
             _logger.LogInfo("Program", ValidationConstants.Messages.ValidationCompleted, $"Exit code: {exitCode}");
             
             return exitCode;
@@ -110,17 +124,18 @@ class Program
         e.SetObserved(); // 예외를 관찰됨으로 표시하여 앱 종료 방지
     }
 
-    static async Task<int> RunValidation()
+    static async Task<int> RunValidation(bool enableStreaming = false, string? serverUrl = null)
     {
         try
         {
             var currentDir = Directory.GetCurrentDirectory();
-            _logger?.LogInfo("RunValidation", "Starting validation process", $"Directory: {currentDir}");
+            _logger?.LogInfo("RunValidation", "Starting validation process", 
+                $"Directory: {currentDir}, Streaming: {enableStreaming}");
             
             PrintLogo();
 
             var context = CreateValidationContext(currentDir);
-            var report = await ExecuteValidation(context);
+            var report = await ExecuteValidation(context, enableStreaming, serverUrl);
             
             if (report == null) return -1;
 
@@ -148,7 +163,10 @@ class Program
         return context;
     }
 
-    private static async Task<ValidationReport?> ExecuteValidation(ValidationContext context)
+    private static async Task<ValidationReport?> ExecuteValidation(
+        ValidationContext context, 
+        bool enableStreaming = false, 
+        string? serverUrl = null)
     {
         try
         {
@@ -157,8 +175,10 @@ class Program
                 .SpinnerStyle(Style.Parse("yellow"))
                 .StartAsync(ValidationConstants.Messages.ValidatingMcpTools, async ctx =>
                 {
-                    _logger?.LogInfo("RunValidation", "Starting orchestrator validation");
-                    var orchestrator = new ValidationOrchestrator(_logger);
+                    _logger?.LogInfo("RunValidation", "Starting orchestrator validation",
+                        $"Streaming: {enableStreaming}");
+                    // 스트리밍 검증을 기본적으로 활성화 (서버 URL은 옵션이 있을 때만)
+                    var orchestrator = new ValidationOrchestrator(_logger, true, enableStreaming ? serverUrl : null);
                     var result = await orchestrator.ValidateAsync(context);
                     _logger?.LogInfo("RunValidation", "Orchestrator validation completed", 
                         $"IsValid: {result.IsValid}, Issues: {result.Issues.Count}");
@@ -254,9 +274,15 @@ class Program
         AnsiConsole.WriteLine();
         
         AnsiConsole.MarkupLine("[bold]Usage:[/]");
-        AnsiConsole.WriteLine("  mcp-validator                # Validate all MCP tools in current directory");
-        AnsiConsole.WriteLine("  mcp-validator --help         # Show this help");
-        AnsiConsole.WriteLine("  mcp-validator --version      # Show version");
+        AnsiConsole.WriteLine("  mcp-validator                              # Validate all MCP tools (includes streaming validation)");
+        AnsiConsole.WriteLine("  mcp-validator --streaming --server-url URL # Include live server URL testing");
+        AnsiConsole.WriteLine("  mcp-validator --help                       # Show this help");
+        AnsiConsole.WriteLine("  mcp-validator --version                    # Show version");
+        AnsiConsole.WriteLine();
+        
+        AnsiConsole.MarkupLine("[bold]Options:[/]");
+        AnsiConsole.WriteLine("  --streaming, -s              # Enable live streaming server URL testing");
+        AnsiConsole.WriteLine("  --server-url <URL>           # Specify streaming server URL for live testing (default: http://localhost:5556)");
         AnsiConsole.WriteLine();
 
         AnsiConsole.MarkupLine("[bold]How it works:[/]");
@@ -279,9 +305,10 @@ class Program
 
         AnsiConsole.MarkupLine("[bold]Validation includes:[/]");
         AnsiConsole.MarkupLine("  • JSON manifest structure and required fields");
-        AnsiConsole.MarkupLine("  • DLL assembly loading and MCP interface implementation");
+        AnsiConsole.MarkupLine("  • DLL assembly loading and MCP/Streamable interface implementation");
         AnsiConsole.MarkupLine("  • Manifest-DLL consistency (tool names, parameters)");
         AnsiConsole.MarkupLine("  • Runtime tool instantiation and execution tests");
+        AnsiConsole.MarkupLine("  • Streaming capability validation (IAsyncEnumerable<StreamChunk>)");
         AnsiConsole.WriteLine();
 
         return Task.FromResult(0);

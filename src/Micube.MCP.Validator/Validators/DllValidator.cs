@@ -5,6 +5,7 @@ using Micube.MCP.SDK.Models;
 using Micube.MCP.Validator.Models;
 using Micube.MCP.Validator.Services;
 using Micube.MCP.Validator.Constants;
+using Micube.MCP.SDK.Streamable.Interface;
 
 namespace Micube.MCP.Validator.Validators;
 
@@ -123,13 +124,15 @@ public class DllValidator : IValidator
         try
         {
             var toolGroupTypes = assembly.GetTypes()
-                .Where(t => typeof(IMcpToolGroup).IsAssignableFrom(t) && !t.IsAbstract)
+                .Where(t => (typeof(IMcpToolGroup).IsAssignableFrom(t) ||
+                             typeof(IStreamableMcpToolGroup).IsAssignableFrom(t))
+                             && !t.IsAbstract)
                 .ToList();
 
             if (toolGroupTypes.Count == 0)
             {
                 report.AddWarning("DLL", ValidationConstants.ErrorCodes.Dll.NoToolGroupImplementation, 
-                    "No IMcpToolGroup implementation found",
+                    "No IMcpToolGroup or IStreamableMcpToolGroup implementation found",
                     "This assembly does not contain MCP tool implementations (may be a dependency DLL)");
                 report.Duration = DateTime.UtcNow - startTime;
                 return null;
@@ -306,7 +309,7 @@ public class DllValidator : IValidator
         {
             report.AddError("DLL", ValidationConstants.ErrorCodes.Dll.InvalidReturnType,
                 $"Tool method '{method.Name}' has invalid return type",
-                "Tool methods must return Task or Task<T>");
+                "Tool methods must return Task, Task<T>, or IAsyncEnumerable<StreamChunk> for streaming");
         }
     }
 
@@ -320,6 +323,19 @@ public class DllValidator : IValidator
         if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
         {
             return true;
+        }
+
+        // Check for streaming return type: IAsyncEnumerable<StreamChunk>
+        if (returnType.IsGenericType && 
+            returnType.GetGenericTypeDefinition() == typeof(IAsyncEnumerable<>) &&
+            returnType.GetGenericArguments().Length == 1)
+        {
+            var elementType = returnType.GetGenericArguments()[0];
+            // Check if it's StreamChunk or any type named StreamChunk
+            if (elementType.Name == "StreamChunk")
+            {
+                return true;
+            }
         }
 
         return false;

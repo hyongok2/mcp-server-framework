@@ -11,7 +11,7 @@ public class ValidationOrchestrator
     private readonly List<IValidator> _validators;
     private readonly FileLogger? _logger;
 
-    public ValidationOrchestrator(FileLogger? logger = null)
+    public ValidationOrchestrator(FileLogger? logger = null, bool includeStreamingValidation = false, string? serverUrl = null)
     {
         _logger = logger;
         _validators = new List<IValidator>
@@ -21,6 +21,15 @@ public class ValidationOrchestrator
             new IntegrityValidator(),
             new RuntimeValidator()
         };
+
+        // Add streaming validators if requested
+        if (includeStreamingValidation)
+        {
+            _validators.Add(new StreamingValidator());
+            _validators.Add(new SseResponseValidator(serverUrl));
+            _logger?.LogInfo("ValidationOrchestrator", "Streaming validation enabled", 
+                "Added StreamingValidator and SseResponseValidator");
+        }
 
         _logger?.LogInfo("ValidationOrchestrator", "Orchestrator initialized", 
             $"Validators: {string.Join(", ", _validators.Select(v => v.Name))}");

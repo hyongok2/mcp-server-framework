@@ -2,6 +2,7 @@ using System.Reflection;
 using Micube.MCP.Core.MetaData;
 using Micube.MCP.SDK.Attributes;
 using Micube.MCP.SDK.Interfaces;
+using Micube.MCP.SDK.Streamable.Interface;
 using Micube.MCP.Validator.Models;
 
 namespace Micube.MCP.Validator.Validators;
@@ -82,13 +83,15 @@ public class IntegrityValidator : IValidator
 
             // ToolGroup 타입 찾기
             var toolGroupTypes = assembly.GetTypes()
-                .Where(t => typeof(IMcpToolGroup).IsAssignableFrom(t) && !t.IsAbstract)
+                .Where(t => (typeof(IMcpToolGroup).IsAssignableFrom(t) ||
+                             typeof(IStreamableMcpToolGroup).IsAssignableFrom(t))
+                             && !t.IsAbstract)
                 .ToList();
 
             if (toolGroupTypes.Count == 0)
             {
                 report.AddError("Integrity", "INT010", 
-                    "No IMcpToolGroup implementation found in DLL");
+                    "No IMcpToolGroup or IStreamableMcpToolGroup implementation found in DLL");
                 report.Duration = DateTime.UtcNow - startTime;
                 return report;
             }

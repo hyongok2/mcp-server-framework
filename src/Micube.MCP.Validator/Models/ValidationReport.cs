@@ -52,6 +52,18 @@ public class ValidationReport
         });
     }
 
+    public void AddSuccess(string category, string code, string message, string? details = null)
+    {
+        AddIssue(new ValidationIssue
+        {
+            Severity = IssueSeverity.Info, // Success는 Info 레벨로 처리
+            Category = category,
+            Code = code,
+            Message = $"✅ {message}",
+            Details = details
+        });
+    }
+
     private void UpdateStatistics()
     {
         Statistics.TotalIssues = Issues.Count;
