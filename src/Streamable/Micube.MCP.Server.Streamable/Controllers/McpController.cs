@@ -135,55 +135,6 @@ public class McpController : ControllerBase
         return new EmptyResult();
     }
 
-    /// <summary>
-    /// Health check endpoint
-    /// </summary>
-    [HttpGet("health")]
-    public IActionResult Health()
-    {
-        return Ok(new
-        {
-            status = "healthy",
-            timestamp = DateTime.UtcNow,
-            server = "MCP Streamable Server",
-            version = "1.0.0",
-            protocol = "MCP 2025-06-18"
-        });
-    }
-
-    /// <summary>
-    /// Server capabilities and endpoint information
-    /// </summary>
-    [HttpGet("capabilities")]
-    public IActionResult Capabilities()
-    {
-        var opts = HttpContext.RequestServices.GetService<IOptions<StreamableServerOptions>>()?.Value ?? new StreamableServerOptions();
-        return Ok(new
-        {
-            name = "MCP Streamable Server",
-            version = "1.0.0",
-            protocol = "MCP 2025-06-18",
-            transport = "HTTP/SSE",
-            endpoints = new
-            {
-                mcp = "/mcp",
-                health = "/mcp/health",
-                capabilities = "/mcp/capabilities"
-            },
-            capabilities = opts.Capabilities,
-            streaming = new
-            {
-                supported = true,
-                automatic = true,
-                mode = "mcp/streamChunk (JSON-RPC notification over SSE)",
-                progressScale = "0..1",
-                completion = "chunk.type=complete with final result embedded",
-                error = "chunk.type=error ends stream",
-                description = "Server automatically chooses streaming or regular response based on method capabilities. Client requests are identical in all cases."
-            }
-        });
-    }
-
     private static string FormatAsSSE(McpMessage request, StreamChunk chunk)
     {
         // Normalize progress to 0..1 if needed

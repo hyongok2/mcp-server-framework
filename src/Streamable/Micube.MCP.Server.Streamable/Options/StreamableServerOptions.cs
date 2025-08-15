@@ -53,48 +53,13 @@ public class StreamableServerOptions
     public bool EnableSwagger { get; set; } = true;
 
     /// <summary>
-    /// Server capabilities
+    /// Enable periodic SSE heartbeat comments to keep connection alive
     /// </summary>
-    public ServerCapabilities Capabilities { get; set; } = new();
+    public bool EnableHeartbeat { get; set; } = true;
 
-        /// <summary>
-        /// Enable periodic SSE heartbeat comments to keep connection alive
-        /// </summary>
-        public bool EnableHeartbeat { get; set; } = true;
-
-        /// <summary>
-        /// Heartbeat interval
-        /// </summary>
-        public TimeSpan HeartbeatInterval { get; set; } = TimeSpan.FromSeconds(15);
+    /// <summary>
+    /// Heartbeat interval
+    /// </summary>
+    public TimeSpan HeartbeatInterval { get; set; } = TimeSpan.FromSeconds(15);
 }
 
-/// <summary>
-/// Server capabilities configuration
-/// </summary>
-public class ServerCapabilities
-{
-    /// <summary>
-    /// Support for streaming responses
-    /// </summary>
-    public bool Streaming { get; set; } = true;
-
-    /// <summary>
-    /// Support for tools
-    /// </summary>
-    public bool Tools { get; set; } = true;
-
-    /// <summary>
-    /// Support for resources
-    /// </summary>
-    public bool Resources { get; set; } = false;
-
-    /// <summary>
-    /// Support for prompts
-    /// </summary>
-    public bool Prompts { get; set; } = false;
-
-    /// <summary>
-    /// Real-time streaming support
-    /// </summary>
-    public bool Realtime { get; set; } = true;
-}

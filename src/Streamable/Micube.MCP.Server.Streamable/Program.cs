@@ -16,6 +16,7 @@ using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.Server.Streamable.Options;
 using Micube.MCP.Core.Streamable.Dispatcher;
 using Micube.MCP.Core.Streamable.Loader;
+using Micube.MCP.Core.Streamable.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -54,9 +55,6 @@ if (streamableOptions.EnableCors)
 
 app.UseRouting();
 app.MapControllers();
-
-// Root endpoint - redirect to capabilities
-app.MapGet("/", () => Results.Redirect("/mcp/capabilities"));
 
 var logger = app.Services.GetRequiredService<IMcpLogger>();
 logger.LogInfo("MCP Streamable Server starting...");
@@ -135,7 +133,7 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<IMessageValidator, MessageValidator>();
     services.AddSingleton<ISessionState, SessionState>();
 
-    services.AddSingleton<IToolQueryService, ToolQueryService>();
+    services.AddSingleton<IToolQueryService, StreamableToolQueryService>();
 
     // Handlers - both regular and streaming
     services.AddTransient<IMethodHandler, InitializeHandler>();
@@ -159,7 +157,6 @@ void RegisterServices(IServiceCollection services)
 
         return new StreamableToolDispatcher(groups, logger);
     });
-
 
     // Streaming services
     services.AddSingleton<IStreamingMessageDispatcher, StreamingMessageDispatcher>();
