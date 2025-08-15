@@ -135,14 +135,14 @@ void RegisterServices(IServiceCollection services)
 
     services.AddSingleton<IToolQueryService, StreamableToolQueryService>();
 
-    // Handlers - both regular and streaming
-    services.AddTransient<IMethodHandler, InitializeHandler>();
-    services.AddTransient<IMethodHandler, PingHandler>();
-    services.AddTransient<IMethodHandler, InitializedNotificationHandler>();
-    services.AddTransient<IMethodHandler, ToolsListHandler>();
+    // Handlers - both regular and streaming (stateless, so singleton is efficient)
+    services.AddSingleton<IMethodHandler, InitializeHandler>();
+    services.AddSingleton<IMethodHandler, PingHandler>();
+    services.AddSingleton<IMethodHandler, InitializedNotificationHandler>();
+    services.AddSingleton<IMethodHandler, ToolsListHandler>();
 
     // Replace with stream-compatible tools/call handler
-    services.AddTransient<IMethodHandler, ToolsCallStreamHandler>();
+    services.AddSingleton<IMethodHandler, ToolsCallStreamHandler>();
 
     services.AddSingleton<IStreamableToolDispatcher>(sp =>
     {

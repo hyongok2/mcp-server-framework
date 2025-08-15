@@ -92,16 +92,16 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<ISessionState, SessionState>();
     services.AddSingleton<IConfigurationValidator, ConfigurationValidator>();
 
-    // 핸들러들 등록
-    services.AddTransient<IMethodHandler, InitializeHandler>();
-    services.AddTransient<IMethodHandler, PingHandler>();
-    services.AddTransient<IMethodHandler, InitializedNotificationHandler>();
-    services.AddTransient<IMethodHandler, ToolsListHandler>();
-    services.AddTransient<IMethodHandler, ToolsCallHandler>();
-    services.AddTransient<IMethodHandler, ResourcesListHandler>();
-    services.AddTransient<IMethodHandler, ResourcesReadHandler>();
-    services.AddTransient<IMethodHandler, PromptsListHandler>();
-    services.AddTransient<IMethodHandler, PromptsGetHandler>();
+    // 핸들러들 등록 (stateless이므로 singleton이 효율적)
+    services.AddSingleton<IMethodHandler, InitializeHandler>();
+    services.AddSingleton<IMethodHandler, PingHandler>();
+    services.AddSingleton<IMethodHandler, InitializedNotificationHandler>();
+    services.AddSingleton<IMethodHandler, ToolsListHandler>();
+    services.AddSingleton<IMethodHandler, ToolsCallHandler>();
+    services.AddSingleton<IMethodHandler, ResourcesListHandler>();
+    services.AddSingleton<IMethodHandler, ResourcesReadHandler>();
+    services.AddSingleton<IMethodHandler, PromptsListHandler>();
+    services.AddSingleton<IMethodHandler, PromptsGetHandler>();
 
     services.AddSingleton<IToolQueryService, ToolQueryService>();
     services.AddSingleton<IToolDispatcher>(sp =>
