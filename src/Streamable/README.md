@@ -243,3 +243,53 @@ curl http://localhost:5556/health
 - ✅ 스트림 중 에러 발생 시 Error 청크 전송
 - ✅ finally 블록에서 리소스 정리
 - ✅ 타임아웃 설정으로 무한 대기 방지
+
+---
+
+# 📌 MCP Streamable 향후 진행 사항
+
+## 1. 프로토콜/규약 합의
+- [ ] **이벤트 타입 명세 확정**
+  - `partial`, `progress`, `final`, `error` 네이밍 및 의미 고정
+  - 최종 종료 규칙: `final` 또는 `error` 중 하나는 반드시 1회 발생
+- [ ] **하트비트 규약**
+  - SSE 코멘트(`: hb ...`) vs 이벤트(`method: "heartbeat"`)
+  - 간격 및 타임아웃 처리 방법
+- [ ] **취소 규약**
+  - 클라이언트 취소 시 서버가 보내는 종료 이벤트 및 에러 코드
+- [ ] **툴 메타 데이터**
+  - `annotations.streamable: true/false` 노출 여부
+  - `tools/list` 합산 방식 확정
+- [ ] **백프레셔/제한**
+  - `MaxEventsPerRequest`, `MaxBytesPerRequest` 도입 여부
+  - 초과 시 동작(에러/중단)
+
+## 2. 전송/협상 방식
+- [ ] **SSE/JSON 협상**
+  - `Accept` 헤더 기반 전송 모드 결정
+  - `/mcp`(자동) + `/mcp/stream`(SSE 강제) 이중 엔드포인트 여부
+- [ ] **CORS/Origin 정책**
+  - 운영 환경에 맞는 화이트리스트 옵션(`AllowedOrigins`)
+- [ ] **계약 버전 표기**
+  - `protocolVersion` 필드 및 `X-MCP-Contract` 헤더 도입
+
+## 3. 서버 개선
+- [ ] **종료 시그널 보장**
+  - `try/finally`로 `Complete` 이벤트 강제 전송
+- [ ] **하트비트 구현**
+  - 기본 간격 15초, 옵션으로 조정 가능
+- [ ] **구조화 로깅/메트릭**
+  - `method`, `sessionId`, `chunks`, `duration_ms`, `end_reason` 등
+- [ ] **에러 처리**
+  - 스트리밍 중 예외 시 `error` 이벤트 전송 후 종료
+
+## 4. 테스트/운영 준비
+- [ ] **통합 테스트**
+  - 100회 partial + final 보장
+  - Timeout 시 Error + 종료
+  - 클라이언트 취소 시 서버 중단
+- [ ] **로드 테스트**
+  - 장기 스트림, 대량 partial, 느린 소비자 대응
+- [ ] **운영 매뉴얼**
+  - 서버 옵션 설명 (`AllowAutoUpgradeToSse`, `HeartbeatIntervalSeconds` 등)
+  - 장애/취소/타임아웃 대응 절차
