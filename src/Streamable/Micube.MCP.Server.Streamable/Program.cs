@@ -17,6 +17,7 @@ using Micube.MCP.Server.Streamable.Options;
 using Micube.MCP.Core.Streamable.Dispatcher;
 using Micube.MCP.Core.Streamable.Loader;
 using Micube.MCP.Core.Streamable.Services;
+using Micube.MCP.Server.Streamable.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -29,21 +30,6 @@ builder.Configuration
 RegisterServices(builder.Services);
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
-    var options = app.Services.GetRequiredService<IOptions<StreamableServerOptions>>().Value;
-    if (options.EnableSwagger)
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "MCP Streamable Server v1");
-            c.RoutePrefix = string.Empty;
-        });
-    }
-}
 
 app.UseHttpsRedirection();
 
@@ -72,15 +58,6 @@ void RegisterServices(IServiceCollection services)
     // Add controllers and API exploration
     services.AddControllers();
     services.AddEndpointsApiExplorer();
-    services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Title = "MCP Streamable Server",
-            Version = "v1",
-            Description = "HTTP/SSE MCP Server with streaming support"
-        });
-    });
 
     // Configure Kestrel
     services.Configure<KestrelServerOptions>(options =>
@@ -161,6 +138,13 @@ void RegisterServices(IServiceCollection services)
 
     // Streaming services
     services.AddSingleton<IStreamingMessageDispatcher, StreamingMessageDispatcher>();
+    
+    // Extracted streaming services (SRP compliance)
+    services.AddSingleton<IHttpStreamingResponseService, HttpStreamingResponseService>();
+    services.AddSingleton<ISseFormatter, SseFormatter>();
+    services.AddSingleton<IHeartbeatService, HeartbeatService>();
+    services.AddSingleton<ICancellationTokenBuilder, CancellationTokenBuilder>();
+    services.AddSingleton<IStreamingResponseCoordinator, StreamingResponseCoordinator>();
 }
 
 public partial class Program { }

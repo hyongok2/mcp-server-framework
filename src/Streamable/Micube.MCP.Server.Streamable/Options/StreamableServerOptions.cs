@@ -38,11 +38,6 @@ public class StreamableServerOptions
     public TimeSpan KeepAliveTimeout { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// Enable Swagger UI in development
-    /// </summary>
-    public bool EnableSwagger { get; set; } = true;
-
-    /// <summary>
     /// Enable periodic SSE heartbeat comments to keep connection alive
     /// </summary>
     public bool EnableHeartbeat { get; set; } = true;
