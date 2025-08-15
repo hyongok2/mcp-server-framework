@@ -5,7 +5,9 @@ using Micube.MCP.Core.Streamable.Models;
 using Micube.MCP.SDK.Abstracts;
 using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.SDK.Models;
+using Micube.MCP.SDK.Streamable.Models;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Micube.MCP.Core.Streamable.Dispatcher;
 
@@ -28,19 +30,73 @@ public class StreamableToolDispatcher : IStreamableToolDispatcher
             StringComparer.OrdinalIgnoreCase);
     }
 
-    // TODO: 아래 함수를 변경해야 함. 스트리밍이 가능한 방식으로. 
-    public Task<ToolCallResult> InvokeAsync(string fullToolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Invokes a tool with streaming support
+    /// </summary>
+    public async IAsyncEnumerable<StreamChunk> InvokeStreamAsync(
+        string fullToolName,
+        Dictionary<string, object> parameters,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        // Parse the full tool name (format: "GroupName.ToolName")
+        var parts = fullToolName.Split('.');
+        if (parts.Length != 2)
+        {
+            yield return new StreamChunk
+            {
+                Type = StreamChunkType.Error,
+                Content = $"Invalid tool name format: '{fullToolName}'. Expected 'GroupName.ToolName'",
+                IsFinal = true,
+                SequenceNumber = 1,
+                Timestamp = DateTime.UtcNow
+            };
+            yield break;
+        }
+
+        var groupName = parts[0];
+        var toolName = parts[1];
+
+        // Find the tool group
+        if (!_groupMap.TryGetValue(groupName, out var loadedGroup))
+        {
+            yield return new StreamChunk
+            {
+                Type = StreamChunkType.Error,
+                Content = $"Tool group '{groupName}' not found",
+                IsFinal = true,
+                SequenceNumber = 1,
+                Timestamp = DateTime.UtcNow
+            };
+            yield break;
+        }
+
+        // Log the invocation
+        _logger.LogDebug($"Dispatching streamable tool: {fullToolName}");
+
+        // Invoke the tool with streaming
+        await foreach (var chunk in loadedGroup.GroupInstance.InvokeStreamAsync(toolName, parameters, cancellationToken))
+        {
+            yield return chunk;
+        }
     }
 
+    /// <summary>
+    /// Gets the list of available tool groups
+    /// </summary>
     public List<string> GetAvailableGroups()
     {
-        throw new NotImplementedException();
+        return _groupMap.Keys.ToList();
     }
 
+    /// <summary>
+    /// Gets metadata for a specific tool group
+    /// </summary>
     public ToolGroupMetadata? GetGroupMetadata(string groupName)
     {
-        throw new NotImplementedException();
+        if (_groupMap.TryGetValue(groupName, out var loadedGroup))
+        {
+            return loadedGroup.Metadata;
+        }
+        return null;
     }
 }

@@ -15,6 +15,7 @@ using Micube.MCP.Core.Streamable.Handlers;
 using Micube.MCP.SDK.Interfaces;
 using Micube.MCP.Server.Streamable.Options;
 using Micube.MCP.Core.Streamable.Dispatcher;
+using Micube.MCP.Core.Streamable.Loader;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -153,7 +154,7 @@ void RegisterServices(IServiceCollection services)
         var baseDir = AppContext.BaseDirectory;
         var resolvedPath = Path.GetFullPath(Path.Combine(baseDir, toolOptions.Directory));
 
-        var loader = new ToolGroupLoader(logger);
+        var loader = new StreamableToolGroupLoader(logger);
         var groups = loader.LoadFromDirectory(resolvedPath, toolOptions.Whitelist.ToArray());
 
         return new StreamableToolDispatcher(groups, logger);

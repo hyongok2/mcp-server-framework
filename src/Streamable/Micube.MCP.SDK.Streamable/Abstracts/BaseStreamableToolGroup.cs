@@ -4,6 +4,7 @@ using System.Text.Json;
 using Micube.MCP.SDK.Abstracts;
 using Micube.MCP.SDK.Attributes;
 using Micube.MCP.SDK.Interfaces;
+using Micube.MCP.SDK.Models;
 using Micube.MCP.SDK.Streamable.Interface;
 using Micube.MCP.SDK.Streamable.Models;
 
@@ -47,9 +48,96 @@ public abstract class BaseStreamableToolGroup : IStreamableMcpToolGroup
 
     protected abstract void OnConfigure(JsonElement? config);
 
-    // TODO: 아래 함수를 변경해야 함. 스트리밍이 가능한 방식으로. 
-    public Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Invokes a tool with streaming support
+    /// </summary>
+    public async IAsyncEnumerable<StreamChunk> InvokeStreamAsync(
+        string toolName,
+        Dictionary<string, object> parameters,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (!_toolMethodCache.TryGetValue(toolName, out var method))
+        {
+            yield return new StreamChunk
+            {
+                Type = StreamChunkType.Error,
+                Content = $"Tool '{toolName}' not found in group '{GroupName}'",
+                IsFinal = true,
+                SequenceNumber = 1,
+                Timestamp = DateTime.UtcNow
+            };
+            yield break;
+        }
+
+        // Log tool invocation
+        Logger.LogDebug($"Invoking streamable tool: {GroupName}.{toolName}");
+
+        // Start metadata chunk
+        yield return new StreamChunk
+        {
+            Type = StreamChunkType.Metadata,
+            Content = $"Starting tool: {toolName}",
+            SequenceNumber = 1,
+            Timestamp = DateTime.UtcNow,
+            Metadata = new Dictionary<string, object>
+            {
+                ["tool"] = toolName,
+                ["group"] = GroupName,
+                ["parameters"] = parameters
+            }
+        };
+
+        // Check if method returns IAsyncEnumerable<StreamChunk> (streaming)
+        var returnType = method.ReturnType;
+        if (returnType.IsGenericType &&
+            returnType.GetGenericTypeDefinition() == typeof(IAsyncEnumerable<>) &&
+            returnType.GetGenericArguments()[0] == typeof(StreamChunk))
+        {
+            // Streaming method
+            var result = method.Invoke(this, new object[] { parameters, cancellationToken });
+            if (result is IAsyncEnumerable<StreamChunk> stream)
+            {
+                var sequenceNumber = 2;
+                await foreach (var chunk in stream.WithCancellation(cancellationToken))
+                {
+                    chunk.SequenceNumber = sequenceNumber++;
+                    yield return chunk;
+                }
+            }
+        }
+        else if (returnType == typeof(Task<ToolCallResult>))
+        {
+            // Non-streaming method - wrap result in stream chunks
+            var task = (Task<ToolCallResult>)method.Invoke(this, new object[] { parameters })!;
+            var result = await task;
+
+            // Progress chunk
+            yield return new StreamChunk
+            {
+                Type = StreamChunkType.Progress,
+                Content = "Processing...",
+                SequenceNumber = 2,
+                Progress = 0.5,
+                Timestamp = DateTime.UtcNow
+            };
+
+            // Complete chunk with result
+            yield return new StreamChunk
+            {
+                Type = StreamChunkType.Complete,
+                Content = "Tool execution completed",
+                IsFinal = true,
+                SequenceNumber = 3,
+                Timestamp = DateTime.UtcNow,
+                Metadata = new Dictionary<string, object>
+                {
+                    ["result"] = result
+                }
+            };
+        }
+        else
+        {
+            throw new NotSupportedException($"Tool method '{toolName}' has unsupported return type: {returnType}");
+        }
     }
 }

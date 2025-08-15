@@ -6,6 +6,7 @@ using Micube.MCP.Core.Streamable.Dispatcher;
 using Micube.MCP.Core.Utils;
 using Micube.MCP.SDK.Exceptions;
 using Micube.MCP.SDK.Interfaces;
+using Micube.MCP.SDK.Models;
 using Micube.MCP.SDK.Streamable.Models;
 using Newtonsoft.Json;
 
@@ -130,91 +131,85 @@ public class ToolsCallStreamHandler : IStreamingHandler
             }
         };
 
-        // Execute the tool (non-streaming). Cancellation is propagated.
-        Micube.MCP.SDK.Models.ToolCallResult? result = null;
-        StreamChunk? exceptionChunk = null;
-        try
+        // Execute the tool with streaming support
+        var sequenceNumber = 2;
+        Micube.MCP.SDK.Models.ToolCallResult? finalResult = null;
+        var hasError = false;
+
+        // Invoke the tool with streaming
+        await foreach (var chunk in _streamableToolDispatcher.InvokeStreamAsync(
+            call.Name,
+            call.Arguments ?? new Dictionary<string, object>(),
+            cancellationToken))
         {
-            // TODO: 아래 함수를 변경해야 함. 스트리밍이 가능한 방식으로. 
-            result = await _streamableToolDispatcher.InvokeAsync(call.Name, call.Arguments ?? new Dictionary<string, object>(), cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInfo($"tools/call canceled: {requestId}");
-            exceptionChunk = new StreamChunk
+            // Update sequence number
+            chunk.SequenceNumber = sequenceNumber++;
+
+            // Check if this is a completion chunk with result
+            if (chunk.Type == StreamChunkType.Complete && chunk.Metadata?.ContainsKey("result") == true)
             {
-                Type = StreamChunkType.Error,
-                Content = "Request canceled",
-                IsFinal = true,
-                SequenceNumber = 2,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
+                // Extract the result from the complete chunk
+                finalResult = chunk.Metadata["result"] as ToolCallResult;
+
+                // Wrap the result in MCP 0618-compliant response format
+                yield return new StreamChunk
                 {
-                    ["code"] = (int)McpErrorCodes.INTERNAL_ERROR,
-                    ["message"] = "Canceled"
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error during streaming tool invocation: {ex.Message}", ex);
-            exceptionChunk = new StreamChunk
+                    Type = StreamChunkType.Complete,
+                    Content = chunk.Content,
+                    IsFinal = true,
+                    SequenceNumber = chunk.SequenceNumber,
+                    Timestamp = chunk.Timestamp,
+                    Progress = chunk.Progress,
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["response"] = new
+                        {
+                            jsonrpc = "2.0",
+                            id = message.Id,
+                            result = finalResult
+                        }
+                    }
+                };
+            }
+            else if (chunk.Type == StreamChunkType.Error)
             {
-                Type = StreamChunkType.Error,
-                Content = ex.Message,
-                IsFinal = true,
-                SequenceNumber = 2,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["code"] = (int)McpErrorCodes.INTERNAL_ERROR,
-                    ["message"] = "Tool execution failed"
-                }
-            };
+                hasError = true;
+                // Pass through error chunks
+                yield return chunk;
+            }
+            else
+            {
+                // Pass through other chunks (metadata, progress, content)
+                yield return chunk;
+            }
         }
 
-        if (exceptionChunk != null)
-        {
-            yield return exceptionChunk;
-            yield break;
-        }
-
-        if (result == null || result.IsError)
+        // If no final result was received and no error, create a default completion chunk
+        if (!hasError && finalResult == null)
         {
             yield return new StreamChunk
             {
-                Type = StreamChunkType.Error,
-                Content = result?.Content.FirstOrDefault()?.Text ?? "Tool execution failed",
+                Type = StreamChunkType.Complete,
+                Content = "Tool execution completed",
                 IsFinal = true,
-                SequenceNumber = 2,
+                SequenceNumber = sequenceNumber,
                 Timestamp = DateTime.UtcNow,
                 Metadata = new Dictionary<string, object>
                 {
-                    ["code"] = (int)McpErrorCodes.INTERNAL_ERROR,
-                    ["message"] = "Tool execution failed",
-                    ["tool"] = call.Name
+                    ["response"] = new
+                    {
+                        jsonrpc = "2.0",
+                        id = message.Id,
+                        result = new ToolCallResult
+                        {
+                            Content = new List<ToolContent>
+                            {
+                                new ToolContent { Type = "text", Text = "Tool completed successfully" }
+                            }
+                        }
+                    }
                 }
             };
-            yield break;
         }
-
-        // Final completion chunk with result payload per MCP 0618 guidance
-        yield return new StreamChunk
-        {
-            Type = StreamChunkType.Complete,
-            Content = "Tool execution completed",
-            IsFinal = true,
-            SequenceNumber = 3,
-            Timestamp = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object>
-            {
-                ["response"] = new
-                {
-                    jsonrpc = "2.0",
-                    id = message.Id,
-                    result = result
-                }
-            }
-        };
     }
 }

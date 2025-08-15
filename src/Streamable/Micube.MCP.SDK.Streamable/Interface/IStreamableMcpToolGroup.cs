@@ -1,5 +1,7 @@
 using System;
 using System.Text.Json;
+using Micube.MCP.SDK.Models;
+using Micube.MCP.SDK.Streamable.Models;
 
 namespace Micube.MCP.SDK.Streamable.Interface;
 
@@ -10,8 +12,14 @@ public interface IStreamableMcpToolGroup
     /// </summary>
     string GroupName { get; }
 
-    // TODO: 아래 함수를 변경해야 함. 스트리밍이 가능한 방식으로. 
-    Task<ToolCallResult> InvokeAsync(string toolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Invokes a tool with streaming support
+    /// </summary>
+    /// <param name="toolName">Tool name within this group</param>
+    /// <param name="parameters">Tool parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Async enumerable of stream chunks</returns>
+    IAsyncEnumerable<StreamChunk> InvokeStreamAsync(string toolName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default);
 
     /// <summary> ToolGroup 자체 Config 주입 </summary>
     void Configure(JsonElement? config);
