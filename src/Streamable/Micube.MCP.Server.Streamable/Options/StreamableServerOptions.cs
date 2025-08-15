@@ -23,16 +23,6 @@ public class StreamableServerOptions
     public bool EnableCors { get; set; } = true;
 
     /// <summary>
-    /// Directory containing tool assemblies
-    /// </summary>
-    public string ToolDirectory { get; set; } = "tools";
-
-    /// <summary>
-    /// List of allowed tool assemblies
-    /// </summary>
-    public string[] ToolWhitelist { get; set; } = Array.Empty<string>();
-
-    /// <summary>
     /// Enable detailed request/response logging
     /// </summary>
     public bool EnableDetailedLogging { get; set; } = false;
