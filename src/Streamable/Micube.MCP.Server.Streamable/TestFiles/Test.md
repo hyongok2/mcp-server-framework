@@ -48,7 +48,7 @@
     "id": 3,
     "method": "tools/call",
     "params": {
-      "name": "SimpleStreamableDemo.simple_echo",
+      "name": "SimpleStreamableDemo_simple_echo",
       "arguments": {
         "text": "Hello from Postman!"
       }
@@ -62,7 +62,7 @@
     "id": 4,
     "method": "tools/call",
     "params": {
-      "name": "SimpleStreamableDemo.simple_count",
+      "name": "SimpleStreamableDemo_simple_count",
       "arguments": {
         "count": 3
       }
@@ -76,7 +76,7 @@
     "id": 5,
     "method": "tools/call",
     "params": {
-      "name": "SimpleStreamableDemo.stream_count",
+      "name": "SimpleStreamableDemo_stream_count",
       "arguments": {
         "count": 5,
         "delay": 1000
@@ -91,7 +91,7 @@
     "id": 6,
     "method": "tools/call",
     "params": {
-      "name": "SimpleStreamableDemo.stream_text",
+      "name": "SimpleStreamableDemo_stream_text",
       "arguments": {
         "text": "Streaming test from Postman API"
       }

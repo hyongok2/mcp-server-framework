@@ -152,6 +152,12 @@ void RegisterServices(IServiceCollection services)
     services.AddSingleton<IComponentHealthChecker, ToolsHealthChecker>();
     services.AddSingleton<IHealthAggregator, HealthAggregator>();
     services.AddSingleton<IHealthResponseFormatter, HealthResponseFormatter>();
+    
+    // Handler services (SRP compliance)
+    services.AddSingleton<IToolCallRequestParser, ToolCallRequestParser>();
+    services.AddSingleton<IHandlerErrorChunkFactory, HandlerErrorChunkFactory>();
+    services.AddSingleton<IMcpResponseWrapper, McpResponseWrapper>();
+    services.AddSingleton<IToolCallStreamProcessor, ToolCallStreamProcessor>();
 }
 
 public partial class Program { }

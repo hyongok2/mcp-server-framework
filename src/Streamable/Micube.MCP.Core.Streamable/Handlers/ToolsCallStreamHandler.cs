@@ -1,14 +1,9 @@
 using System.Runtime.CompilerServices;
-using Micube.MCP.Core.Dispatcher;
 using Micube.MCP.Core.Handlers;
 using Micube.MCP.Core.Models;
-using Micube.MCP.Core.Streamable.Dispatcher;
-using Micube.MCP.Core.Utils;
-using Micube.MCP.SDK.Exceptions;
+using Micube.MCP.Core.Streamable.Services;
 using Micube.MCP.SDK.Interfaces;
-using Micube.MCP.SDK.Models;
 using Micube.MCP.SDK.Streamable.Models;
-using Newtonsoft.Json;
 
 namespace Micube.MCP.Core.Streamable.Handlers;
 
@@ -18,16 +13,24 @@ namespace Micube.MCP.Core.Streamable.Handlers;
 /// </summary>
 public class ToolsCallStreamHandler : IStreamingHandler
 {
-    private readonly IStreamableToolDispatcher _streamableToolDispatcher;
+    private readonly IToolCallRequestParser _requestParser;
+    private readonly IHandlerErrorChunkFactory _errorChunkFactory;
+    private readonly IToolCallStreamProcessor _streamProcessor;
     private readonly IMcpLogger _logger;
 
-    public string MethodName => JsonRpcConstants.Methods.ToolsCall;
+    public string MethodName => "tools/call";
     public bool RequiresInitialization => true;
     public bool SupportsStreaming => true;
 
-    public ToolsCallStreamHandler(IStreamableToolDispatcher streamableToolDispatcher, IMcpLogger logger)
+    public ToolsCallStreamHandler(
+        IToolCallRequestParser requestParser,
+        IHandlerErrorChunkFactory errorChunkFactory,
+        IToolCallStreamProcessor streamProcessor,
+        IMcpLogger logger)
     {
-        _streamableToolDispatcher = streamableToolDispatcher;
+        _requestParser = requestParser;
+        _errorChunkFactory = errorChunkFactory;
+        _streamProcessor = streamProcessor;
         _logger = logger;
     }
 
@@ -51,165 +54,25 @@ public class ToolsCallStreamHandler : IStreamingHandler
     {
         var requestId = message.Id?.ToString() ?? "unknown";
 
-        if (message.Params == null)
+        // Parse and validate the request
+        var parseResult = _requestParser.ParseRequest(message);
+        if (!parseResult.IsSuccess)
         {
-            yield return new StreamChunk
-            {
-                Type = StreamChunkType.Error,
-                Content = "Missing params: Tool call requires parameters",
-                IsFinal = true,
-                SequenceNumber = 1,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["code"] = (int)McpErrorCodes.INVALID_PARAMS,
-                    ["message"] = "Missing params"
-                }
-            };
+            yield return _errorChunkFactory.CreateValidationErrorChunk(
+                parseResult.ErrorMessage!, 
+                parseResult.ErrorCode!.Value);
             yield break;
         }
 
-        McpToolCallRequest? call;
-        StreamChunk? parseErrorChunk = null;
-        try
-        {
-            call = JsonConvert.DeserializeObject<McpToolCallRequest>(message.Params.ToString() ?? "{}");
-        }
-        catch (JsonException ex)
-        {
-            parseErrorChunk = new StreamChunk
-            {
-                Type = StreamChunkType.Error,
-                Content = ex.Message,
-                IsFinal = true,
-                SequenceNumber = 1,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["code"] = (int)McpErrorCodes.INVALID_PARAMS,
-                    ["message"] = "Invalid params format"
-                }
-            };
-            call = null;
-        }
+        _logger.LogDebug($"Processing tool call: {parseResult.Request!.Name}");
 
-        if (parseErrorChunk != null)
-        {
-            yield return parseErrorChunk;
-            yield break;
-        }
-
-        if (call == null || string.IsNullOrEmpty(call.Name))
-        {
-            yield return new StreamChunk
-            {
-                Type = StreamChunkType.Error,
-                Content = "Tool name is required",
-                IsFinal = true,
-                SequenceNumber = 1,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["code"] = (int)McpErrorCodes.INVALID_PARAMS,
-                    ["message"] = "Invalid params"
-                }
-            };
-            yield break;
-        }
-
-        // Optional: initial metadata chunk
-        yield return new StreamChunk
-        {
-            Type = StreamChunkType.Metadata,
-            Content = "tools/call started",
-            SequenceNumber = 1,
-            Timestamp = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object>
-            {
-                ["tool"] = call.Name,
-                ["argumentsPreview"] = string.Join(",", (call.Arguments != null ? call.Arguments.Keys : System.Linq.Enumerable.Empty<string>()))
-            }
-        };
-
-        // Execute the tool with streaming support
-        var sequenceNumber = 2;
-        Micube.MCP.SDK.Models.ToolCallResult? finalResult = null;
-        var hasError = false;
-
-        // Invoke the tool with streaming
-        await foreach (var chunk in _streamableToolDispatcher.InvokeStreamAsync(
-            call.Name,
-            call.Arguments ?? new Dictionary<string, object>(),
+        // Process the tool call stream
+        await foreach (var chunk in _streamProcessor.ProcessToolCallStreamAsync(
+            parseResult.Request!, 
+            message.Id!, 
             cancellationToken))
         {
-            // Update sequence number
-            chunk.SequenceNumber = sequenceNumber++;
-
-            // Check if this is a completion chunk with result
-            if (chunk.Type == StreamChunkType.Complete && chunk.Metadata?.ContainsKey("result") == true)
-            {
-                // Extract the result from the complete chunk
-                finalResult = chunk.Metadata["result"] as ToolCallResult;
-
-                // Wrap the result in MCP 0618-compliant response format
-                yield return new StreamChunk
-                {
-                    Type = StreamChunkType.Complete,
-                    Content = chunk.Content,
-                    IsFinal = true,
-                    SequenceNumber = chunk.SequenceNumber,
-                    Timestamp = chunk.Timestamp,
-                    Progress = chunk.Progress,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["response"] = new
-                        {
-                            jsonrpc = "2.0",
-                            id = message.Id,
-                            result = finalResult
-                        }
-                    }
-                };
-            }
-            else if (chunk.Type == StreamChunkType.Error)
-            {
-                hasError = true;
-                // Pass through error chunks
-                yield return chunk;
-            }
-            else
-            {
-                // Pass through other chunks (metadata, progress, content)
-                yield return chunk;
-            }
-        }
-
-        // If no final result was received and no error, create a default completion chunk
-        if (!hasError && finalResult == null)
-        {
-            yield return new StreamChunk
-            {
-                Type = StreamChunkType.Complete,
-                Content = "Tool execution completed",
-                IsFinal = true,
-                SequenceNumber = sequenceNumber,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["response"] = new
-                    {
-                        jsonrpc = "2.0",
-                        id = message.Id,
-                        result = new ToolCallResult
-                        {
-                            Content = new List<ToolContent>
-                            {
-                                new ToolContent { Type = "text", Text = "Tool completed successfully" }
-                            }
-                        }
-                    }
-                }
-            };
+            yield return chunk;
         }
     }
 }

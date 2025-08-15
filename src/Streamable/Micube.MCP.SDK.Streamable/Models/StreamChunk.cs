@@ -41,14 +41,3 @@ public class StreamChunk
     public Dictionary<string, object>? Metadata { get; set; }
 }
 
-/// <summary>
-/// Types of stream chunks
-/// </summary>
-public enum StreamChunkType
-{
-    Content,
-    Progress,
-    Metadata,
-    Error,
-    Complete
-}

@@ -39,13 +39,13 @@ public class StreamableToolDispatcher : IStreamableToolDispatcher
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Parse the full tool name (format: "GroupName.ToolName")
-        var parts = fullToolName.Split('.');
+        var parts = fullToolName.Split('_',2);
         if (parts.Length != 2)
         {
             yield return new StreamChunk
             {
                 Type = StreamChunkType.Error,
-                Content = $"Invalid tool name format: '{fullToolName}'. Expected 'GroupName.ToolName'",
+                Content = $"Invalid tool name format: '{fullToolName}'. Expected 'GroupName_ToolName'",
                 IsFinal = true,
                 SequenceNumber = 1,
                 Timestamp = DateTime.UtcNow
