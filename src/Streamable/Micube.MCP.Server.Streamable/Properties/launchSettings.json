@@ -3,11 +3,11 @@
     "Micube.MCP.Server.Streamable": {
       "commandName": "Project",
       "launchBrowser": false,
-      "launchUrl": "",
+      "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:60223;http://localhost:60224"
+      "applicationUrl": "http://localhost:5556"
     },
   }
 }

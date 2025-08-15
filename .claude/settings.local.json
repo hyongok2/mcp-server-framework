@@ -36,7 +36,11 @@
       "WebSearch",
       "Bash(dir:*)",
       "Bash(find:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(copy:*)",
+      "WebFetch(domain:spec.modelcontextprotocol.io)",
+      "WebFetch(domain:modelcontextprotocol.io)",
+      "WebFetch(domain:blog.cloudflare.com)"
     ],
     "deny": [],
     "ask": [],
